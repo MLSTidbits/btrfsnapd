@@ -1,0 +1,4 @@
+.markdownlint.yaml
+.vscode/
+
+build/

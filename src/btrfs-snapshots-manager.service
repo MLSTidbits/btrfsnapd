@@ -1,0 +1,10 @@
+[Unit]
+Description = Manage btrfs snapshots
+
+[Service]
+Type = oneshot
+ExecStart = /usr/local/bin/btrfs-management create
+ExecStop = /usr/local/bin/btrfs-management delete
+
+[Install]
+WantedBy = multi-user.target

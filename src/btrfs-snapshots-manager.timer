@@ -1,0 +1,11 @@
+[Unit]
+Description = Manage btrfs snapshots
+
+[Timer]
+OnCalendar = daily
+Persistent = true
+WakeSystem = true
+RandomizedDelaySec = 1h
+
+[Install]
+WantedBy = timers.target
