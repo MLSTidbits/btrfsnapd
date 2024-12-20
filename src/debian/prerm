@@ -1,0 +1,12 @@
+#!/bin/env bash
+
+# Pre remove script for dpkg/apt
+case "${1}" in
+    remove|purge)
+        systemctl disable --now btrfs-snapshots-manager.timer
+    ;;
+    *)
+        echo "prerm called with unknown argument \`$1'" >&2
+        exit 0
+    ;;
+esac

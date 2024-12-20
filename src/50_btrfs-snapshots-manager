@@ -1,2 +1,2 @@
 # Take a snapshot before installing or removing packages
-DPkg::Pre-Invoke { "btrfs-management create" ; "btrfs-management delete" ; };
+DPkg::Pre-Invoke { "btrfs-snapshots-manager create" ; "btrfs-snapshots-manager delete" ; };

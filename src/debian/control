@@ -1,14 +1,12 @@
-Source: btrfs-snapshots-manager
+Package: btrfs-snapshots-manager
 Version:
 Section: utils
 Priority: optional
 Maintainer: Michael L. Schaecher <mschaecher78@gmail.com>
-Build-Depends: make
 Homepage: https://github.com/MichaelSchaecher/beetree
-
-Package: btrfs-snapshots-manager
 Architecture: amd64
-Depends: btrfs-tools
+Depends: btrfs-progs
+Build-Depends: make, pandoc
 Description: BTRFS Snapshots Manager
   Manage btrfs snapshots with ease and with the help of apt configuration
   a snapshot is created before changes are made to the system using apt.

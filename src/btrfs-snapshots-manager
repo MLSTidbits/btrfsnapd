@@ -36,18 +36,22 @@ set -eo pipefail
 # shellcheck source=/dev/null
 source /etc/os-release
 
-source /etc/btrfs.conf
+source /etc/btrfs-snapshots-manager.conf
 
 # Define the name of the snapshot
-APP_NAME="btrfs-snapshot-manager"
-APP_VERSION="$(cat /usr/share/doc/${APP_NAME}/VERSION)"
+APP_NAME="btrfs-snapshots-manager"
+APP_VERSION="$(cat /usr/share/doc/${APP_NAME}/version)"
 
 # Check if the snapshot directory exists
 test -d "${SNAPSHOT_DIR}" || { echo "${SNAPSHOT_DIR}"; exit 1; }
 
 case "${1}" in
-    help    )    echo "Usage: ${0} {create|delete|list|version|help}"  ;;
-    version )    echo "${APP_NAME} ${APP_VERSION}"                     ;;
+    help    )
+        echo "Usage: ${APP_NAME} {create|delete|list|version|help}" ; exit 0
+    ;;
+    version )
+        echo "${APP_NAME} ${APP_VERSION}" ; exit 0
+    ;;
 esac
 
 checkRoot ; case "${1}" in

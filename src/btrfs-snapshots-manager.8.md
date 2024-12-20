@@ -1,23 +1,23 @@
 ---
-title: beetree
+title: BTRFS Snapshots Manger
 section: 8
-header: Beetree Manual
-footer: Beetree
+header: Manual
+footer: BTRFS Snapshots Manger
 author: Michael L. Schaecher <mschaecher78@gmail.com>
 date: 2024-12-18
 ---
 
 # NAME
 
-beetree - a simple, but powerful way to manage **btrfs** snapshots.
+BTRFS Snapshots Manger - a simple, but powerful way to manage **btrfs** snapshots.
 
 # SYNOPSIS
 
-**beetree** [*command*]
+**btrfs-snapshots-manager** [*command*]
 
 # DESCRIPTION
 
-Plus side of **btrfs** is its ability to create snapshots of subvolumes. Downside is that you have to manage them manually. **beetree** is a simple, but powerful way to manage **btrfs** snapshots.
+Plus side of **btrfs** is its ability to create snapshots of subvolumes. Downside is that you have to manage them manually. **btrfs-snapshots-manager** is a simple, but powerful way to manage **btrfs** snapshots.
 
 # COMMANDS
 
@@ -30,6 +30,10 @@ Plus side of **btrfs** is its ability to create snapshots of subvolumes. Downsid
 **list**
 :   List all snapshots
 
+# SEE ALSO
+
+btrfs(8)
+
 # COPYRIGHT
 
-**BEETREE** is licensed under the MIT License Copyright (c) 2024
+**BTRFS Snapshots Manger** is licensed under the MIT License Copyright (c) 2024

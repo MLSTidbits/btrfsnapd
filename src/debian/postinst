@@ -4,10 +4,10 @@
 case "$1" in
     configure)
         # Enable the service or reload the daemon
-        if systemctl is-active --quiet btrfs-snapshot-manager.timer ; then
-            systemctl reload b-tree-snapshots.timer
+        if systemctl is-active --quiet btrfs-snapshots-manager.timer ; then
+            systemctl daemon-reload
         else
-            systemctl enable --now b-tree-snapshots.timer
+            systemctl enable --now btfs-snapshots-manager.timer
         fi
     ;;
     abort-upgrade|abort-remove|abort-deconfigure)

@@ -18,6 +18,8 @@ BUILD_CHANGELOG = $(BUILD_DIR)/$(INSTALL_DIR)/share/doc/$(NAME)/changelog.DEBIAN
 
 ROOT_DIR = $(shell pwd)
 
+export NAME VERSION ROOT_DIR BUILD_CHANGELOG
+
 .PHONY: all install debian build
 
 all: build install
@@ -47,24 +49,53 @@ ifeq ($(MANPAGE),y)
 	@gzip --best -nvf $(BUILD_DIR)/$(INSTALL_DIR)/share/man/man8/$(NAME).8
 endif
 
-	@chmod -v 0755 $(BUILD_DIR)/$(INSTALL_DIR)/bin/$(NAME)
-	@chmod -v 0644 $(BUILD_DIR)/$(INSTALL_DIR)/lib/systemd/system/ \
-		$(BUILD_DIR)/$(APT_CONFIG_DIR)/ \
-		$(BUILD_DIR)/etc/ \
-		$(BUILD_DIR)/$(INSTALL_DIR)/share/doc/$(NAME)/
+	@chmod 755 $(BUILD_DIR)/$(INSTALL_DIR)/bin/$(NAME)
+	@chmod 644 $(BUILD_DIR)/$(INSTALL_DIR)/lib/systemd/system/$(NAME).* \
+		$(BUILD_DIR)/$(APT_CONFIG_DIR)/50_$(NAME) \
+		$(BUILD_DIR)/etc/$(NAME).conf \
+		$(BUILD_DIR)/$(INSTALL_DIR)/share/doc/$(NAME)/*
 
-ifeq ($(DEBIAN),y)
+debian:
+
+	@make build MANPAGE=y
+
 	@mkdir -pv $(BUILD_DIR)/$(DEBIAN_DIR)
 	@cp -vf $(SRC_DIR)/debian/control $(BUILD_DIR)/$(DEBIAN_DIR)/
 	@cp -vf $(SRC_DIR)/debian/postinst $(BUILD_DIR)/$(DEBIAN_DIR)/
 
 	@sed -i "s/Version:/Version: $(VERSION)/" $(BUILD_DIR)/$(DEBIAN_DIR)/control
 
-	@chmod -v 0755 $(BUILD_DIR)/$(DEBIAN_DIR)/postinst
+	@find $(BUILD_DIR) -type f -exec md5sum {} \; > $(BUILD_DIR)/$(DEBIAN_DIR)/md5sums
 
-endif
+	@sed -i "s|$(BUILD_DIR)/||" $(BUILD_DIR)/$(DEBIAN_DIR)/md5sums
+	@sed -i "/DEBIAN\//d" $(BUILD_DIR)/$(DEBIAN_DIR)/md5sums
+
+	@scripts/deb-changelog
+
+	@chmod 755 $(BUILD_DIR)/$(DEBIAN_DIR)/postinst
+
+	@dpkg-deb --root-owner-group --build $(BUILD_DIR) build/$(NAME)_$(VERSION)_amd64.deb
+
+install:
+
+	@cp -Rvf $(BUILD_DIR)/* /
+
+	@systemctl is-enabled --quiet $(NAME).timer && systemctl stop $(NAME).timer || \
+		systemctl enable --now $(NAME).timer
+
+remove:
+
+	@systemctl is-enabled --quiet $(NAME).timer && systemctl disable --now $(NAME).timer || true
+
+	@rm -Rvf /$(INSTALL_DIR)/bin/$(NAME) \
+		/$(INSTALL_DIR)/lib/systemd/system/$(NAME).* \
+		/$(APT_CONFIG_DIR)/50_$(NAME) \
+		/etc/$(NAME).conf \
+		/$(INSTALL_DIR)/share/doc/$(NAME)/*
 
 clean:
 
-	@rm -Rvf $(BUILD_DIR)
+	@rm -Rvf build
+
+
 
