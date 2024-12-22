@@ -1,64 +1,28 @@
 #!/bin/env bash
 
-# Copyright © 2024 by Michael Schaecher <MIT License> all rights reserved
-
-# This script is designed to maintain btrfs snapshots on a system using btrfs
-# subvolumes.
-
-function checkRoot () {
-    test "$(id -u)" -eq 0 || { echo "This script must be run as root."; exit 1; }
-}
-
-# Delete the oldest snapshot
-# shellcheck disable=SC2012
-function deleteSnapshot () {
-
-    echo "Total snapshots: $(ls -1 "${SNAPSHOT_DIR}" | wc -l)"
-
-    # Delete snapshots exceeding the total to keep
-    while [ "$(ls -1 "${SNAPSHOT_DIR}" | wc -l)" -gt "${TOTAL_KEEP}" ]; do
-
-        OLD_SNAPSHOTS=$(ls -1 "${SNAPSHOT_DIR}" | sort -r | tail -n 1)
-
-        if btrfs subvolume delete "${SNAPSHOT_DIR}/${OLD_SNAPSHOTS}" ; then
-            echo "Deleted: ${OLD_SNAPSHOTS}"
-        else
-            echo "Failed to delete: ${OLD_SNAPSHOTS}"
-            exit 1
-        fi
-    done
-
-}
-
-# Exit on error
 set -eo pipefail
 
-# shellcheck source=/dev/null
 source /etc/os-release
 
 source /etc/btrfs-snapshots-manager.conf
 
-# Define the name of the snapshot
-APP_NAME="btrfs-snapshots-manager"
-APP_VERSION="$(cat /usr/share/doc/${APP_NAME}/version)"
+# Set the number of snapshots to keep
 
-# Check if the snapshot directory exists
-test -d "${SNAPSHOT_DIR}" || { echo "${SNAPSHOT_DIR}"; exit 1; }
+test "$(id -u)" -eq 0 || { echo "Must be root to run this script"; exit 1; }
 
-case "${1}" in
-    help    )
-        echo "Usage: ${APP_NAME} {create|delete|list|version|help}" ; exit 0
-    ;;
-    version )
-        echo "${APP_NAME} ${APP_VERSION}" ; exit 0
-    ;;
-esac
+btrfs subvolume snapshot / "${SNAPSHOT_DIR}/${SNAPSHOT_PREFIX}" || { echo "Failed to create snapshot"; exit 1; }
 
-checkRoot ; case "${1}" in
-    create  )    btrfs subvolume snapshot / "${SNAPSHOT_PATH}"         ;;
-    delete  )    deleteSnapshot                                        ;;
-    list    )    ls -1 "${SNAPSHOT_DIR}"                               ;;
-    *       )    echo "Usage: ${0} {create|delete|list|version|help}"  ;;
-esac
+echo "Total snapshots: $(ls -1 "${SNAPSHOT_DIR}" | wc -l)"
+
+# Delete snapshots exceeding the total to keep
+while [ "$(ls -1 "${SNAPSHOT_DIR}" | wc -l)" -gt "${TOTAL_KEEP}" ]; do
+
+    OLD_SNAPSHOTS=$(ls -1 "${SNAPSHOT_DIR}" | sort -r | tail -n 1)
+
+    btrfs subvolume delete "${SNAPSHOT_DIR}/${OLD_SNAPSHOTS}" || { echo "Failed to delete: ${OLD_SNAPSHOTS}"; exit 1; }
+
+done
+
+echo "Total snapshots: $(ls -1 "${SNAPSHOT_DIR}" | wc -l)"
 
 exit 0

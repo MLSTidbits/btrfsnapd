@@ -32,12 +32,11 @@ build:
 		$(BUILD_DIR)/$(APT_CONFIG_DIR)
 
 	@cp -vf $(SRC_DIR)/$(NAME) $(BUILD_DIR)/$(INSTALL_DIR)/bin/
-	@cp -vf $(SRC_DIR)/$(NAME).conf $(BUILD_DIR)/etc
+	@cp -vf $(SRC_DIR)/$(NAME).conf $(BUILD_DIR)/etc/
 
 	@cp -vf $(SRC_DIR)/$(NAME).service $(BUILD_DIR)/$(INSTALL_DIR)/lib/systemd/system/
 	@cp -vf $(SRC_DIR)/$(NAME).timer $(BUILD_DIR)/$(INSTALL_DIR)/lib/systemd/system/
 
-	@cp -vf $(SRC_DIR)/$(NAME).conf $(BUILD_DIR)/etc/
 	@cp -vf $(SRC_DIR)/50_$(NAME) $(BUILD_DIR)/$(APT_CONFIG_DIR)/
 
 	@cp -vf ./COPYING $(BUILD_DIR)/$(INSTALL_DIR)/share/doc/$(NAME)/copyright
@@ -62,6 +61,7 @@ debian:
 	@mkdir -pv $(BUILD_DIR)/$(DEBIAN_DIR)
 	@cp -vf $(SRC_DIR)/debian/control $(BUILD_DIR)/$(DEBIAN_DIR)/
 	@cp -vf $(SRC_DIR)/debian/postinst $(BUILD_DIR)/$(DEBIAN_DIR)/
+	@cp -vf $(SRC_DIR)/debian/prerm $(BUILD_DIR)/$(DEBIAN_DIR)/
 
 	@sed -i "s/Version:/Version: $(VERSION)/" $(BUILD_DIR)/$(DEBIAN_DIR)/control
 
@@ -72,7 +72,8 @@ debian:
 
 	@scripts/deb-changelog
 
-	@chmod 755 $(BUILD_DIR)/$(DEBIAN_DIR)/postinst
+	@chmod -v 755 $(BUILD_DIR)/$(DEBIAN_DIR)/postinst \
+		$(BUILD_DIR)/$(DEBIAN_DIR)/prerm
 
 	@dpkg-deb --root-owner-group --build $(BUILD_DIR) build/$(NAME)_$(VERSION)_amd64.deb
 

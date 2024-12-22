@@ -7,7 +7,7 @@ case "$1" in
         if systemctl is-active --quiet btrfs-snapshots-manager.timer ; then
             systemctl daemon-reload
         else
-            systemctl enable --now btfs-snapshots-manager.timer
+            systemctl enable --now btrfs-snapshots-manager.timer
         fi
     ;;
     abort-upgrade|abort-remove|abort-deconfigure)
