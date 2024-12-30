@@ -15,11 +15,15 @@ btrfs subvolume snapshot / "${SNAPSHOT_DIR}/${SNAPSHOT_PREFIX}" || { echo "Faile
 echo "Total snapshots: $(ls -1 "${SNAPSHOT_DIR}" | wc -l)"
 
 # Delete snapshots exceeding the total to keep
-while [ "$(ls -1 "${SNAPSHOT_DIR}" | wc -l)" -gt "${TOTAL_KEEP}" ]; do
+while true ; do
 
     OLD_SNAPSHOTS=$(ls -1 "${SNAPSHOT_DIR}" | sort -r | tail -n 1)
 
-    btrfs subvolume delete "${SNAPSHOT_DIR}/${OLD_SNAPSHOTS}" || { echo "Failed to delete: ${OLD_SNAPSHOTS}"; exit 1; }
+    if test "$(ls -1 "${SNAPSHOT_DIR}" | wc -l)" -gt "${TOTAL_KEEP}" ; then
+        btrfs su delete "${SNAPSHOT_DIR}/${OLD_SNAPSHOTS}" || { echo "Failed to delete: ${OLD_SNAPSHOTS}"; exit 1; }
+    else
+        break
+    fi
 
 done
 
