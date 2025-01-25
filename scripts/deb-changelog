@@ -1,8 +1,0 @@
-#!/bin/env bash
-
-set -eo pipefail
-
-git log --pretty=format:"${NAME} (%h) sable; urgency=optional%n%n  \
-* %s%n%n -- %an <%ae>  %aD%n" --date=rfc -- "${ROOT_DIR}" | tee "${BUILD_CHANGELOG}" > /dev/null
-
-gzip --best -nvf "${BUILD_CHANGELOG}"

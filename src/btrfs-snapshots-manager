@@ -10,17 +10,15 @@ source /etc/btrfs-snapshots-manager.conf
 
 test "$(id -u)" -eq 0 || { echo "Must be root to run this script"; exit 1; }
 
-btrfs subvolume snapshot / "${SNAPSHOT_DIR}/${SNAPSHOT_PREFIX}" || { echo "Failed to create snapshot"; exit 1; }
-
-echo "Total snapshots: $(ls -1 "${SNAPSHOT_DIR}" | wc -l)"
+btrfs subvolume snapshot / "${SNAPSHOT_PATH}" || { echo "Failed to create snapshot"; exit 1; }
 
 # Delete snapshots exceeding the total to keep
 while true ; do
 
-    OLD_SNAPSHOTS=$(ls -1 "${SNAPSHOT_DIR}" | sort -r | tail -n 1)
+    OLD_SNAPSHOTS="$(ls -1 /.snapshots | sort -r | awk 'NR==1')"
 
     if test "$(ls -1 "${SNAPSHOT_DIR}" | wc -l)" -gt "${TOTAL_KEEP}" ; then
-        btrfs su delete "${SNAPSHOT_DIR}/${OLD_SNAPSHOTS}" || { echo "Failed to delete: ${OLD_SNAPSHOTS}"; exit 1; }
+        btrfs su delete "${SNAPSHOT_DIR}/${OLD_SNAPSHOTS}" || { echo "Failed to delete: ${OLD_SNAPSHOTS}" ; exit 1; }
     else
         break
     fi
