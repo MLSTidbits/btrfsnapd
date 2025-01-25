@@ -3,10 +3,18 @@
 # Pre remove script for dpkg/apt
 case "${1}" in
     remove|purge)
-        systemctl disable --now btrfs-snapshots-manager.timer
+        if systemctl is-active --quiet btrfs-snapshots-manager.timer ; then
+            systemctl disable --now btrfs-snapshots-manager.timer
+            rm -f /usr/lib/systemd/system/btrfs-snapshots-manager.timer
+        fi
+
+        # Remove the manpage
+        if test -f /usr/share/man/man8/btrfs-snapshots-manager.8.gz ; then
+            rm -f /usr/share/man/man8/btrfs-snapshots-manager.8.gz
+        fi
     ;;
     *)
-        echo "prerm called with unknown argument \`$1'" >&2
+        echo "prerm called with unknown argument ${1}" >&2
         exit 0
     ;;
 esac
