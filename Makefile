@@ -1,102 +1,107 @@
 #!/bin/env make -f
 
-NAME = btrfs-snapshots-manager
+APP_NAME = btrfs-snapshots-manager
 VERSION = $(shell cat VERSION)
 
-DESCRIPTION = A simple, but powerful way to manage btrfs snapshots on Ubuntu
+DESCRIPTION = Dynamic DNS client
 
-BUILD_DIR = build/$(NAME)-$(VERSION)
-DEBIAN_DIR = DEBIAN
+MAINTAINER = $(shell git config user.name) <$(shell git config user.email)>
 
-SRC_DIR = src
+# Set priority of the package for deb package manager
+# optional, low, standard, important, required
+PRIORITY = optional
 
-APT_CONFIG_DIR = etc/apt/apt.conf.d
+# dpkg Section option
+SECTION = utils
 
-INSTALL_DIR = usr
+# Architecture (amd64, i386, armhf, arm64, ... all)
+AARCH = all
 
-BUILD_CHANGELOG = $(BUILD_DIR)/$(INSTALL_DIR)/share/doc/$(NAME)/changelog.DEBIAN
+export APP_NAME VERSION DESCRIPTION APP_DEP AARCH PRIORITY SECTION MAINTAINER
 
 ROOT_DIR = $(shell pwd)
 
-export NAME VERSION ROOT_DIR BUILD_CHANGELOG
+export ROOT_DIR
 
-.PHONY: all install debian build
+# Source path
+SOURCE_PATH = src
 
+# Build path
+BUILD_PATH = build/$(APP_NAME)-$(VERSION)
+
+BUILD_BIN = $(BUILD_PATH)/usr/bin
+BUILD_DOC = $(BUILD_PATH)/usr/share/doc/$(APP_NAME)
+BUILD_MAN = $(BUILD_PATH)/usr/share/man/man8
+BUILD_COMPLETION = $(BUILD_PATH)/usr/share/bash-completion/completions
+BUILD_CHANGELOG = $(BUILD_DOC)/changelog.DEBIAN
+
+export BUILD_PATH BUILD_DOC BUILD_CHANGELOG
+
+# Install path
+INSTALL_PATH = /usr
+
+
+# Phony targets
+.PHONY: install clean build
+
+# Default target
 all: build install
 
+debian:
+	make build
+
+	@echo "Building debian package"
+
+	@mkdir -pv $(BUILD_PATH)/DEBIAN
+
+	@cp -vf src/debian/* $(BUILD_PATH)/DEBIAN/
+
+	@chmod 755 $(BUILD_PATH)/DEBIAN/postinst $(BUILD_PATH)/DEBIAN/prerm
+
+	@sed -i "s/Version:/Version: $(VERSION)/" $(BUILD_PATH)/DEBIAN/control
+
+	@sed -i "s/Maintainer:/Maintainer: $(MAINTAINER)/" $(BUILD_PATH)/DEBIAN/control
+
+	@git-changelog $(BUILD_CHANGELOG)
+	@gzip -d $(BUILD_CHANGELOG) && mv $(BUILD_CHANGELOG) $(BUILD_PATH)/DEBIAN/changelog
+
+	@dpkg-deb --root-owner-group --build $(BUILD_PATH) build/$(APP_NAME)_$(VERSION)_all.deb
+
+# Install the bash script
 build:
 
-	@mkdir -pv $(BUILD_DIR)/$(INSTALL_DIR)/bin \
-		$(BUILD_DIR)/$(INSTALL_DIR)/share/doc/$(NAME) \
-		$(BUILD_DIR)/$(INSTALL_DIR)/lib/systemd/system \
-		$(BUILD_DIR)/$(APT_CONFIG_DIR)
+	@echo "Building $(APP_NAME) $(VERSION)"
+	@mkdir -pv $(BUILD_BIN) $(BUILD_DOC)
 
-	@cp -vf $(SRC_DIR)/$(NAME) $(BUILD_DIR)/$(INSTALL_DIR)/bin/
-	@cp -vf $(SRC_DIR)/$(NAME).conf $(BUILD_DIR)/etc/
+	@cp -vf $(SOURCE_PATH)/$(APP_NAME) $(BUILD_BIN)/$(APP_NAME)
+	@cp -vf ./VERSION $(BUILD_DOC)/version
+	@cp -vf ./COPYING $(BUILD_DOC)/copyright
 
-	@cp -vf $(SRC_DIR)/$(NAME).service $(BUILD_DIR)/$(INSTALL_DIR)/lib/systemd/system/
-	@cp -vf $(SRC_DIR)/$(NAME).timer $(BUILD_DIR)/$(INSTALL_DIR)/lib/systemd/system/
-
-	@cp -vf $(SRC_DIR)/50_$(NAME) $(BUILD_DIR)/$(APT_CONFIG_DIR)/
-
-	@cp -vf ./COPYING $(BUILD_DIR)/$(INSTALL_DIR)/share/doc/$(NAME)/copyright
-	@cp -vf ./VERSION $(BUILD_DIR)/$(INSTALL_DIR)/share/doc/$(NAME)/version
-
-ifeq ($(MANPAGE),y)
-	@mkdir -pv $(BUILD_DIR)/$(INSTALL_DIR)/share/man/man8
-	@pandoc -s -t man $(SRC_DIR)/$(NAME).8.md -o $(BUILD_DIR)/$(INSTALL_DIR)/share/man/man8/$(NAME).8
-	@gzip --best -nvf $(BUILD_DIR)/$(INSTALL_DIR)/share/man/man8/$(NAME).8
-endif
-
-	@chmod 755 $(BUILD_DIR)/$(INSTALL_DIR)/bin/$(NAME)
-	@chmod 644 $(BUILD_DIR)/$(INSTALL_DIR)/lib/systemd/system/$(NAME).* \
-		$(BUILD_DIR)/$(APT_CONFIG_DIR)/50_$(NAME) \
-		$(BUILD_DIR)/etc/$(NAME).conf \
-		$(BUILD_DIR)/$(INSTALL_DIR)/share/doc/$(NAME)/*
-
-debian:
-
-	@make build MANPAGE=y
-
-	@mkdir -pv $(BUILD_DIR)/$(DEBIAN_DIR)
-	@cp -vf $(SRC_DIR)/debian/control $(BUILD_DIR)/$(DEBIAN_DIR)/
-	@cp -vf $(SRC_DIR)/debian/postinst $(BUILD_DIR)/$(DEBIAN_DIR)/
-	@cp -vf $(SRC_DIR)/debian/prerm $(BUILD_DIR)/$(DEBIAN_DIR)/
-
-	@sed -i "s/Version:/Version: $(VERSION)/" $(BUILD_DIR)/$(DEBIAN_DIR)/control
-
-	@find $(BUILD_DIR) -type f -exec md5sum {} \; > $(BUILD_DIR)/$(DEBIAN_DIR)/md5sums
-
-	@sed -i "s|$(BUILD_DIR)/||" $(BUILD_DIR)/$(DEBIAN_DIR)/md5sums
-	@sed -i "/DEBIAN\//d" $(BUILD_DIR)/$(DEBIAN_DIR)/md5sums
-
-	@scripts/deb-changelog
-
-	@chmod -v 755 $(BUILD_DIR)/$(DEBIAN_DIR)/postinst \
-		$(BUILD_DIR)/$(DEBIAN_DIR)/prerm
-
-	@dpkg-deb --root-owner-group --build $(BUILD_DIR) build/$(NAME)_$(VERSION)_amd64.deb
+# Set the permissions
+	@chmod 755 $(BUILD_BIN)/$(APP_NAME)
+	@chmod 644 $(BUILD_DOC)/*
 
 install:
 
-	@cp -Rvf $(BUILD_DIR)/* /
+	@cp -rvf $(BUILD_PATH)/* /
 
-	@systemctl is-enabled --quiet $(NAME).timer && systemctl stop $(NAME).timer || \
-		systemctl enable --now $(NAME).timer
-
-remove:
-
-	@systemctl is-enabled --quiet $(NAME).timer && systemctl disable --now $(NAME).timer || true
-
-	@rm -Rvf /$(INSTALL_DIR)/bin/$(NAME) \
-		/$(INSTALL_DIR)/lib/systemd/system/$(NAME).* \
-		/$(APT_CONFIG_DIR)/50_$(NAME) \
-		/etc/$(NAME).conf \
-		/$(INSTALL_DIR)/share/doc/$(NAME)/*
+uninstall:
+	@rm -vf $(INSTALL_PATH)/bin/$(APP_NAME) \
+		$(INSTALL_PATH)/share/doc/$(APP_NAME)/* \
+		$(INSTALL_PATH)/share/man/man8/$(APP_NAME).8.gz \
+		$(INSTALL_PATH)/share/bash-completion/completions/$(APP_NAME)
 
 clean:
+	@rm -Rvf ./build
 
-	@rm -Rvf build
-
-
-
+help:
+	@echo "Usage: make [target] <variables>"
+	@echo ""
+	@echo "Targets:"
+	@echo "  all       - Build and install the ddns application"
+	@echo "  build     - Build the ddns application"
+	@echo "  install   - Install the ddns application"
+	@echo "  uninstall - Uninstall the ddns application"
+	@echo "  clean     - Clean up build files"
+	@echo "  help      - Display this help message"
+	@echo ""
