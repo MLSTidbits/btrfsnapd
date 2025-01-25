@@ -6,7 +6,7 @@ Maintainer: Michael L. Schaecher <mschaecher78@gmail.com>
 Homepage: https://github.com/MichaelSchaecher/beetree
 Architecture: amd64
 Depends: btrfs-progs
-Build-Depends: make, pandoc
+Build-Depends: make
 Description: BTRFS Snapshots Manager
   Manage btrfs snapshots with ease and with the help of apt configuration
   a snapshot is created before changes are made to the system using apt.
