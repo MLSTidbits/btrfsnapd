@@ -15,6 +15,20 @@
 
 ## Installation
 
+### Using DPKG/APT
+
+You can install the project using the following command:
+
+```bash
+wget -c https://github.com/MichaelSchaecher/btrfs-snapshots-manager/releases/download/1.24.07-81/btrfs-snapshots-manager_1.24.07-81_all.deb
+
+sudo dpkg -i btrfs-snapshots-manager_1.24.07-81_all.deb
+```
+
+### From Source
+
+Building and installing the project is straightforward. Follow these steps:
+
 1. Clone the repository:
 
 ```bash
