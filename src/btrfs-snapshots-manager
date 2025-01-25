@@ -2,20 +2,22 @@
 
 set -eo pipefail
 
+# shellcheck disable=SC1091
 source /etc/os-release
 
+# shellcheck disable=SC1091
 source /etc/btrfs-snapshots-manager.conf
 
 # Set the number of snapshots to keep
 
-test "$(id -u)" -eq 0 || { echo "Must be root to run this script"; exit 1; }
+test "$(id -u)" -eq "0" || { echo "Must be root to run this script"; exit 1; }
 
-btrfs subvolume snapshot / "${SNAPSHOT_PATH}" || { echo "Failed to create snapshot"; exit 1; }
+btrfs su snapshot / "${SNAPSHOT_PATH}" || { echo "Failed to create snapshot"; exit 1; }
 
 # Delete snapshots exceeding the total to keep
 while true ; do
 
-    OLD_SNAPSHOTS="$(ls -1 /.snapshots | sort -r | awk 'NR==1')"
+    OLD_SNAPSHOTS="$(btrfs su list -o --sort=ogen "${SNAPSHOT_DIR}" | awk -F'/' 'NR==1 {print ${2}}')"
 
     if test "$(ls -1 "${SNAPSHOT_DIR}" | wc -l)" -gt "${TOTAL_KEEP}" ; then
         btrfs su delete "${SNAPSHOT_DIR}/${OLD_SNAPSHOTS}" || { echo "Failed to delete: ${OLD_SNAPSHOTS}" ; exit 1; }
