@@ -17,7 +17,7 @@ btrfs su snapshot / "${SNAPSHOT_PATH}" || { echo "Failed to create snapshot"; ex
 # Delete snapshots exceeding the total to keep
 while true ; do
 
-    OLD_SNAPSHOTS="$(btrfs su list -o --sort=ogen "${SNAPSHOT_DIR}" | awk -F'/' 'NR==1 {print ${2}}')"
+    OLD_SNAPSHOTS="$(btrfs su list -o --sort=ogen "${SNAPSHOT_DIR}" | awk -F'/' 'NR==1 {print $2}')"
 
     if test "$(ls -1 "${SNAPSHOT_DIR}" | wc -l)" -gt "${TOTAL_KEEP}" ; then
         btrfs su delete "${SNAPSHOT_DIR}/${OLD_SNAPSHOTS}" || { echo "Failed to delete: ${OLD_SNAPSHOTS}" ; exit 1; }
