@@ -48,7 +48,15 @@ make build
 sudo make install
 ```
 
-4. Build with **manpage** (optional) by adding `MANPAGE=y`.
+## Usage
+
+**BTRFS Snapshots Manager** is setup as a Systemd service and apt hook to create snapshots and delete old snapshots. The service is enabled by default and will create snapshots on a daily basis. You can also manually create snapshots by running the following command:
+
+```bash
+sudo btrfs-snapshots-manager
+```
+
+Once everything is set up and running you can rest assured that your well be able to restore your system to a previous state in case of a failure.
 
 ## Configuration
 
