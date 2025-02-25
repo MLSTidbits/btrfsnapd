@@ -2,9 +2,9 @@ Package: btrfs-snapshots-manager
 Version:
 Section: utils
 Priority: optional
-Maintainer: Michael L. Schaecher <mschaecher78@gmail.com>
+Maintainer:
 Homepage: https://github.com/MichaelSchaecher/beetree
-Architecture: amd64
+Architecture:
 Depends: btrfs-progs
 Build-Depends: make
 Description: BTRFS Snapshots Manager
