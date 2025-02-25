@@ -2,4 +2,4 @@
 # shellcheck disable=SC1083
 # shellcheck disable=SC1089
 # Take a snapshot before installing or removing packages
-DPkg::Pre-Invoke {"/usr/local/sbin/btrfs-snapshots-manager"; } ;
+DPkg::Pre-Invoke {"/usr/bin/btrfs-snapshots-manager"; } ;
