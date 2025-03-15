@@ -12,9 +12,13 @@ source /etc/btrfs-snapshots-manager.conf
 
 test "$(id -u)" -eq "0" || { echo "Must be root to run this script"; exit 1; }
 
-btrfs su snapshot / "${SNAPSHOT_PATH}" || { echo "Failed to create snapshot"; exit 1; }
+test "false" = "${READONLY}" || SNAPSHOT_OPTIONS="-r"
+
+btrfs su snapshot "${SNAPSHOT_OPTIONS}" / "${SNAPSHOT_PATH}" || { echo "Failed to create snapshot"; exit 1; }
+
 
 # Delete snapshots exceeding the total to keep
+# shellcheck disable=SC2012
 while true ; do
 
     OLD_SNAPSHOTS="$(btrfs su list -o --sort=ogen "${SNAPSHOT_DIR}" | awk -F'/' 'NR==1 {print $2}')"
@@ -27,6 +31,7 @@ while true ; do
 
 done
 
+# shellcheck disable=SC2012
 echo "Total snapshots: $(ls -1 "${SNAPSHOT_DIR}" | wc -l)"
 
 exit 0
