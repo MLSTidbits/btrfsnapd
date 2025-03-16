@@ -1,5 +1,15 @@
 #!/bin/env bash
 
+# btrfs-snapshots-manager copyright (c) 2024 by <mschaecher78@gmail.com> Michael L. Schaecher - MIT License
+
+# This script creates a btrfs snapshot of the root filesystem and deletes old snapshots helping
+# keep data usage manageable.
+
+# Log all output to syslog
+function sysLog () {
+    logger -t btrfs-snapshots-manager "$@"
+}
+
 set -eo pipefail
 
 # shellcheck disable=SC1091
@@ -12,10 +22,18 @@ source /etc/btrfs-snapshots-manager.conf
 
 test "$(id -u)" -eq "0" || { echo "Must be root to run this script"; exit 1; }
 
-test "false" = "${READONLY}" || SNAPSHOT_OPTIONS="-r"
-
-btrfs su snapshot "${SNAPSHOT_OPTIONS}" / "${SNAPSHOT_PATH}" || { echo "Failed to create snapshot"; exit 1; }
-
+case "${READONLY}" in
+    "true"        )
+        btrfs su snapshot -r / "${SNAPSHOT_PATH}" || { sysLog "Failed to create snapshot" ; exit 1; }
+    ;;
+    "false"       )
+        btrfs su snapshot / "${SNAPSHOT_PATH}" || { sysLog "Failed to create snapshot" ; exit 1; }
+    ;;
+    *)
+        sysLog "Invalid value for READONLY: ${READONLY}"
+        exit 1
+    ;;
+esac
 
 # Delete snapshots exceeding the total to keep
 # shellcheck disable=SC2012
@@ -24,7 +42,7 @@ while true ; do
     OLD_SNAPSHOTS="$(btrfs su list -o --sort=ogen "${SNAPSHOT_DIR}" | awk -F'/' 'NR==1 {print $2}')"
 
     if test "$(ls -1 "${SNAPSHOT_DIR}" | wc -l)" -gt "${TOTAL_KEEP}" ; then
-        btrfs su delete "${SNAPSHOT_DIR}/${OLD_SNAPSHOTS}" || { echo "Failed to delete: ${OLD_SNAPSHOTS}" ; exit 1; }
+        btrfs su delete "${SNAPSHOT_DIR}/${OLD_SNAPSHOTS}" || { sysLog "Failed to delete snapshot" ; exit 1; }
     else
         break
     fi
