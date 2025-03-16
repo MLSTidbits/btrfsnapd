@@ -6,9 +6,7 @@
 # keep data usage manageable.
 
 # Log all output to syslog
-function sysLog () {
-    logger -t btrfs-snapshots-manager "$@"
-}
+function sysLog () { logger -t btrfs-snapshots-manager "$@" ; }
 
 set -eo pipefail
 
@@ -18,9 +16,11 @@ source /etc/os-release
 # shellcheck disable=SC1091
 source /etc/btrfs-snapshots-manager.conf
 
-# Set the number of snapshots to keep
-
+# Check if the script is running as root
 test "$(id -u)" -eq "0" || { echo "Must be root to run this script"; exit 1; }
+
+# Check if btrfs is the filesystem in use.
+mount | grep -q "on / type btrfs" || { sysLog "Root filesystem is not btrfs"; exit 1; }
 
 case "${READONLY}" in
     "true"        )
