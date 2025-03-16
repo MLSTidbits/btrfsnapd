@@ -39,10 +39,6 @@ BUILD_CHANGELOG = $(BUILD_DOC)/changelog.DEBIAN
 
 export BUILD_PATH BUILD_DOC BUILD_CHANGELOG
 
-# Install path
-INSTALL_PATH = /usr
-
-
 # Phony targets
 .PHONY: install clean build
 
@@ -67,7 +63,8 @@ debian:
 
 # Debian changelog
 	@git-changelog $(BUILD_CHANGELOG)
-	@gzip -d $(BUILD_CHANGELOG) && mv $(BUILD_CHANGELOG) $(BUILD_PATH)/DEBIAN/changelog
+	@git-changelog $(BUILD_PATH)/DEBIAN/changelog
+	@gzip -d $(BUILD_PATH)/DEBIAN/changelog.gz
 
 # Build the package
 	@dpkg-deb --root-owner-group --build $(BUILD_PATH) build/$(APP_NAME)_$(VERSION)_all.deb
@@ -95,10 +92,10 @@ install:
 	@cp -rvf $(BUILD_PATH)/* /
 
 uninstall:
-	@rm -vf $(INSTALL_PATH)/bin/$(APP_NAME) \
-		$(INSTALL_PATH)/share/doc/$(APP_NAME)/* \
-		$(INSTALL_PATH)/share/man/man8/$(APP_NAME).8.gz \
-		$(INSTALL_PATH)/share/bash-completion/completions/$(APP_NAME)
+	@rm -vf /usr/bin/$(APP_NAME) \
+		/usr/share/doc/$(APP_NAME) \
+		/usr/lib/systemd/system/$(APP_NAME).* \
+		/etc/$(APP_NAME).conf \
 
 clean:
 	@rm -Rvf ./build
