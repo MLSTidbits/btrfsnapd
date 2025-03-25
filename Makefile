@@ -5,7 +5,7 @@ VERSION = $(shell cat VERSION)
 
 MAINTAINER = $(shell git config user.name) <$(shell git config user.email)>
 
-DEPENDS = btrfs-tools, bash (>= 4.4), coreutils, systemd
+DEPENDS = btrfs-progs, bash (>= 4.4), coreutils, systemd
 BUILD_DEPENDS = debhelper, git-changelog, make (>= 4.1), dpkg-dev, bash (>= 4.4)
 
 HOMEPAGE = https:\/\/github.com\/MichaelSchaecher\/btrfs-snapshots-manager
