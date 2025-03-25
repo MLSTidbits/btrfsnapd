@@ -20,7 +20,7 @@ source /etc/btrfs-snapshots-manager.conf
 test "$(id -u)" -eq "0" || { echo "Must be root to run this script"; exit 1; }
 
 # Check if btrfs is the filesystem in use.
-mount | grep -q "on / type btrfs" || { sysLog "Root filesystem is not btrfs"; exit 1; }
+mount | grep "on / type btrfs" || { sysLog "Root filesystem is not btrfs"; exit 1; }
 
 case "${READONLY}" in
     "true"        )
