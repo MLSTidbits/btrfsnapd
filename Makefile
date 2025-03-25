@@ -43,7 +43,7 @@ debian:
 	@git-changelog $(PACKAGE_DIR)/usr/share/doc/$(PACKAGE)/changelog
 	@gzip -d $(PACKAGE_DIR)/DEBIAN/changelog.gz
 
-	@dpkg-deb --root-owner-group --build $(PACKAGE_DIR) package/$(PACKAGE)_$(VERSION)_$(AARCH).deb
+	@dpkg-deb --root-owner-group --build $(PACKAGE_DIR) package/$(PACKAGE)_$(VERSION)_$(ARCH).deb
 
 install:
 
