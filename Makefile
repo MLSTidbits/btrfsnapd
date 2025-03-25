@@ -1,107 +1,64 @@
 #!/bin/env make -f
 
-APP_NAME = btrfs-snapshots-manager
+PACKAGE = btrfs-snapshots-manager
 VERSION = $(shell cat VERSION)
-
-DESCRIPTION = "Btrfs snapshots manager"
 
 MAINTAINER = $(shell git config user.name) <$(shell git config user.email)>
 
-# Set priority of the package for deb package manager
-# optional, low, standard, important, required
-PRIORITY = optional
+DEPENDS = btrfs-tools, bash (>= 4.4), coreutils, systemd
+BUILD_DEPENDS = debhelper, git-changelog, make (>= 4.1), dpkg-dev, bash (>= 4.4)
 
-# dpkg Section option
-SECTION = utils
+HOMEPAGE = https:\/\/github.com\/MichaelSchaecher\/btrfs-snapshots-manager
 
-# Architecture (amd64, i386, armhf, arm64, ... all)
-AARCH = all
+ARCH = amd64
 
-ROOT_DIR = $(shell pwd)
+PACKAGE_DIR = package/$(PACKAGE)_$(VERSION)_$(ARCH)
 
-# Source path
-SOURCE_PATH = src
-
-# Build path
-BUILD_PATH = build/$(APP_NAME)-$(VERSION)
-
-BUILD_ETC = $(BUILD_PATH)/etc
-BUILD_BIN = $(BUILD_PATH)/usr/bin
-BUILD_DOC = $(BUILD_PATH)/usr/share/doc/$(APP_NAME)
-BUILD_SYSTEMD = $(BUILD_PATH)/usr/lib/systemd/system
-BUILD_CHANGELOG = $(BUILD_DOC)/changelog.DEBIAN
-
-export BUILD_PATH BUILD_DOC BUILD_CHANGELOG
+export PACKAGE_DIR
 
 # Phony targets
-.PHONY: install clean build
+.PHONY: all debian clean help
 
 # Default target
-all: build install
+all: debian
 
 debian:
-	make build
 
-	@echo "Building debian package"
+	@echo "Building package $(PACKAGE) version $(VERSION)"
 
-	@mkdir -pv $(BUILD_PATH)/DEBIAN
-	@cp -vf src/debian/* $(BUILD_PATH)/DEBIAN/
+	@mkdir -p $(PACKAGE_DIR)
+	@cp -a app/* $(PACKAGE_DIR)
 
-# Set the permissions for prerm script
-	@chmod 755 $(BUILD_PATH)/DEBIAN/postinst $(BUILD_PATH)/DEBIAN/prerm
+	@sed -i "s/Version:/Version: $(VERSION)/" $(PACKAGE_DIR)/DEBIAN/control
+	@sed -i "s/Maintainer:/Maintainer: $(MAINTAINER)/" $(PACKAGE_DIR)/DEBIAN/control
+	@sed -i "s/Homepage:/Homepage: $(HOMEPAGE)/" $(PACKAGE_DIR)/DEBIAN/control
+	@sed -i "s/Architecture:/Architecture: $(ARCH)/" $(PACKAGE_DIR)/DEBIAN/control
+	@sed -i "s/Depends:/Depends: $(DEPENDS)/" $(PACKAGE_DIR)/DEBIAN/control
+	@sed -i "s/Build-Depends:/Build-Depends: $(BUILD_DEPENDS)/" $(PACKAGE_DIR)/DEBIAN/control
+	@cat ./DESCRIPTION >> $(PACKAGE_DIR)/DEBIAN/control
 
-# Define control file
-	@sed -i "s/Version:/Version: $(VERSION)/" $(BUILD_PATH)/DEBIAN/control
-	@sed -i "s/Maintainer:/Maintainer: $(MAINTAINER)/" $(BUILD_PATH)/DEBIAN/control
-	@sed -i "s/Architecture:/Architecture: $(AARCH)/" $(BUILD_PATH)/DEBIAN/control
+	@help/size
 
-# Debian changelog
-	@git-changelog $(BUILD_CHANGELOG)
-	@git-changelog $(BUILD_PATH)/DEBIAN/changelog
-	@gzip -d $(BUILD_PATH)/DEBIAN/changelog.gz
+	@git-changelog $(PACKAGE_DIR)/DEBIAN/changelog
+	@git-changelog $(PACKAGE_DIR)/usr/share/doc/$(PACKAGE)/changelog
+	@gzip -d $(PACKAGE_DIR)/DEBIAN/changelog.gz
 
-# Build the package
-	@dpkg-deb --root-owner-group --build $(BUILD_PATH) build/$(APP_NAME)_$(VERSION)_all.deb
-
-# Install the bash script
-build:
-
-	@echo "Building $(APP_NAME) $(VERSION)"
-	@mkdir -pv $(BUILD_BIN) $(BUILD_DOC) $(BUILD_ETC)/apt/apt.conf.d $(BUILD_SYSTEMD)
-
-	@cp -vf $(SOURCE_PATH)/$(APP_NAME) $(BUILD_BIN)/$(APP_NAME)
-	@cp -vf ./VERSION $(BUILD_DOC)/version
-	@cp -vf ./COPYING $(BUILD_DOC)/copyright
-	@cp -vf $(SOURCE_PATH)/$(APP_NAME).conf $(BUILD_ETC)/$(APP_NAME).conf
-	@cp -vf $(SOURCE_PATH)/$(APP_NAME).service $(BUILD_SYSTEMD)/$(APP_NAME).service
-	@cp -vf $(SOURCE_PATH)/$(APP_NAME).timer $(BUILD_SYSTEMD)/$(APP_NAME).timer
-	@cp -vf $(SOURCE_PATH)/50_$(APP_NAME) $(BUILD_ETC)/apt/apt.conf.d/50_$(APP_NAME)
-
-# Set the permissions
-	@chmod 755 $(BUILD_BIN)/$(APP_NAME)
-	@chmod 644 $(BUILD_DOC)/*
+	@dpkg-deb --root-owner-group --build $(PACKAGE_DIR) package/$(PACKAGE)_$(VERSION)_$(AARCH).deb
 
 install:
 
-	@cp -rvf $(BUILD_PATH)/* /
-
-uninstall:
-	@rm -vf /usr/bin/$(APP_NAME) \
-		/usr/share/doc/$(APP_NAME) \
-		/usr/lib/systemd/system/$(APP_NAME).* \
-		/etc/$(APP_NAME).conf \
+	@dpkg -i package/$(PACKAGE)_$(VERSION)_$(ARCH).deb
 
 clean:
-	@rm -Rvf ./build
+	@rm -Rvf ./package
 
 help:
 	@echo "Usage: make [target] <variables>"
 	@echo ""
 	@echo "Targets:"
-	@echo "  all       - Build and install the btrfs-snapshots-manager application"
-	@echo "  build     - Build the btrfs-snapshots-manager application"
-	@echo "  install   - Install the btrfs-snapshots-manager application"
-	@echo "  uninstall - Uninstall the btrfs-snapshots-manager application"
+	@echo "  all       - Build the debian package and install it"
+	@echo "  debian    - Build the debian package"
+	@echo "  install   - Install the debian package"
 	@echo "  clean     - Clean up build files"
 	@echo "  help      - Display this help message"
 	@echo ""

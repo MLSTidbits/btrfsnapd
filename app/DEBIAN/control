@@ -1,0 +1,10 @@
+Package: btrfs-snapshots-manager
+Version:
+Section: utils
+Priority: optional
+Maintainer:
+Installed-Size:
+Homepage:
+Architecture:
+Depends:
+Build-Depends:

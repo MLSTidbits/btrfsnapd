@@ -1,0 +1,4 @@
+Description: Manage BTRFS snapshots
+    Take a snapshots after install, updating or removing an application and
+    on a regular basis using systemd timers. Leaving you with a way of restoring
+    your system to a previous state.
