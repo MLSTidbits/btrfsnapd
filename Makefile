@@ -5,8 +5,8 @@ VERSION = $(shell cat VERSION)
 
 MAINTAINER = $(shell git config user.name) <$(shell git config user.email)>
 
-DEPENDS = btrfs-progs, bash (>= 4.4), coreutils, systemd
-BUILD_DEPENDS = debhelper, git-changelog, make (>= 4.1), dpkg-dev, bash (>= 4.4)
+INSTALL = btrfs-progs, bash (>= 4.4), coreutils, systemd
+BUILD = debhelper, git-changelog, make (>= 4.1), dpkg-dev, bash (>= 4.4)
 
 HOMEPAGE = https:\/\/github.com\/MichaelSchaecher\/btrfs-snapshots-manager
 
@@ -33,8 +33,14 @@ debian:
 	@sed -i "s/Maintainer:/Maintainer: $(MAINTAINER)/" $(PACKAGE_DIR)/DEBIAN/control
 	@sed -i "s/Homepage:/Homepage: $(HOMEPAGE)/" $(PACKAGE_DIR)/DEBIAN/control
 	@sed -i "s/Architecture:/Architecture: $(ARCH)/" $(PACKAGE_DIR)/DEBIAN/control
-	@sed -i "s/Depends:/Depends: $(DEPENDS)/" $(PACKAGE_DIR)/DEBIAN/control
-	@sed -i "s/Build-Depends:/Build-Depends: $(BUILD_DEPENDS)/" $(PACKAGE_DIR)/DEBIAN/control
+
+	@sed -i "s/Depends:/Depends: $(INSTALL)/" $(PACKAGE_DIR)/DEBIAN/control
+	@sed -i "s/Build-Depends:/Build-Depends: $(BUILD)/" $(PACKAGE_DIR)/DEBIAN/control
+
+# For some reason the INSTALL variable is being added to BUILD variable at the beginning of the line
+# so we need to remove the that part of the line
+	@sed -i "s/Build-Depends: $(BUILD) $(INSTALL)/Build-Depends: $(BUILD)/" $(PACKAGE_DIR)/DEBIAN/control
+
 	@cat ./DESCRIPTION >> $(PACKAGE_DIR)/DEBIAN/control
 
 	@help/size
