@@ -8,13 +8,13 @@ MAINTAINER = $(shell git config user.name) <$(shell git config user.email)>
 INSTALL = btrfs-progs, bash (>= 4.4), coreutils, systemd
 BUILD = debhelper, git-changelog, make (>= 4.1), dpkg-dev, bash (>= 4.4)
 
-HOMEPAGE = https:\/\/github.com\/MichaelSchaecher\/btrfs-snapshots-manager
+HOMEPAGE = https:\/\/github.com\/MichaelSchaecher\/$(PACKAGE)
 
 ARCH = amd64
 
-PACKAGE_DIR = package/$(PACKAGE)_$(VERSION)_$(ARCH)
+PACKAGE_DIR = package
 
-export PACKAGE_DIR
+export PACKAGE_DIR PACKAGE VERSION MAINTAINER INSTALL BUILD HOMEPAGE
 
 # Phony targets
 .PHONY: all debian clean help
@@ -26,37 +26,22 @@ debian:
 
 	@echo "Building package $(PACKAGE) version $(VERSION)"
 
-	@mkdir -p $(PACKAGE_DIR)
-	@cp -a app/* $(PACKAGE_DIR)
-
-	@sed -i "s/Version:/Version: $(VERSION)/" $(PACKAGE_DIR)/DEBIAN/control
-	@sed -i "s/Maintainer:/Maintainer: $(MAINTAINER)/" $(PACKAGE_DIR)/DEBIAN/control
-	@sed -i "s/Homepage:/Homepage: $(HOMEPAGE)/" $(PACKAGE_DIR)/DEBIAN/control
-	@sed -i "s/Architecture:/Architecture: $(ARCH)/" $(PACKAGE_DIR)/DEBIAN/control
-
-	@sed -i "s/Depends:/Depends: $(INSTALL)/" $(PACKAGE_DIR)/DEBIAN/control
-	@sed -i "s/Build-Depends:/Build-Depends: $(BUILD)/" $(PACKAGE_DIR)/DEBIAN/control
-
-# For some reason the INSTALL variable is being added to BUILD variable at the beginning of the line
-# so we need to remove the that part of the line
-	@sed -i "s/Build-Depends: $(BUILD) $(INSTALL)/Build-Depends: $(BUILD)/" $(PACKAGE_DIR)/DEBIAN/control
-
-	@cat ./DESCRIPTION >> $(PACKAGE_DIR)/DEBIAN/control
-
-	@help/size
+	@scripts/set-control
 
 	@git-changelog $(PACKAGE_DIR)/DEBIAN/changelog
 	@git-changelog $(PACKAGE_DIR)/usr/share/doc/$(PACKAGE)/changelog
 	@gzip -d $(PACKAGE_DIR)/DEBIAN/changelog.gz
 
-	@dpkg-deb --root-owner-group --build $(PACKAGE_DIR) package/$(PACKAGE)_$(VERSION)_$(ARCH).deb
+	@scripts/mkdeb
 
 install:
 
-	@dpkg -i package/$(PACKAGE)_$(VERSION)_$(ARCH).deb
+	@dpkg -i $(PACKAGE)_$(VERSION)_$(ARCH).deb
 
 clean:
-	@rm -Rvf ./package
+	@rm -vf $(PACKAGE_DIR)/DEBIAN/control \
+		$(PACKAGE_DIR)/DEBIAN/changelog \
+		$(PACKAGE_DIR)/usr/share/doc/$(PACKAGE)/changelog.gz
 
 help:
 	@echo "Usage: make [target] <variables>"
