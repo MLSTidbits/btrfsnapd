@@ -1,0 +1,31 @@
+#!/bin/env bash
+
+set -eo pipefail
+
+# Get the usr directory size
+if test -d "${PACKAGE_DIR}/usr" ; then sizeUSR=$(du -s "${PACKAGE_DIR}/usr" | cut -f1) ; fi
+
+# Get the etc directory size
+if test -d "${PACKAGE_DIR}/etc" ; then sizeETC=$(du -s "${PACKAGE_DIR}/etc" | cut -f1) ; fi
+
+# Get the var directory size
+if test -d "${PACKAGE_DIR}/var" ; then sizeVAR=$(du -s "${PACKAGE_DIR}/var" | cut -f1) ; fi
+
+totalSize=$((sizeUSR + sizeETC + sizeVAR))
+
+cat <<EOF > ${PACKAGE_DIR}/DEBIAN/control
+Package: ${PACKAGE}
+Version: ${VERSION}
+Section: utils
+Priority: optional
+Maintainer: ${MAINTAINER}
+Installed-Size: ${totalSize}
+Homepage: ${HOMEPAGE}
+Architecture: amd64
+Depends: ${INSTALL}
+Build-Depends: ${BUILD}
+Description: Manage BTRFS snapshots
+    Take a snapshots after install, updating or removing an application and
+    on a regular basis using systemd timers. Leaving you with a way of restoring
+    your system to a previous state.
+EOF

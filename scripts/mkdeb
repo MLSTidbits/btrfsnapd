@@ -1,0 +1,11 @@
+#!/bin/env bash
+
+set -e
+
+# shellcheck disable=SC2046
+if test -d "../apt-repo" ; then
+	dpkg-deb --root-owner-group --build "${PACKAGE_DIR}" \
+		"../apt-repo/pool/main/b/${PACKAGE}/${PACKAGE}_${VERSION}_${ARCH}.deb"
+else
+	dpkg-deb --root-owner-group --build "${PACKAGE_DIR}" "${PACKAGE}_${VERSION}_${ARCH}.deb"
+fi
