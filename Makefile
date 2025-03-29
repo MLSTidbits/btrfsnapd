@@ -28,9 +28,10 @@ debian:
 
 	@scripts/set-control
 
-	@git-changelog $(PACKAGE_DIR)/DEBIAN/changelog
-	@git-changelog $(PACKAGE_DIR)/usr/share/doc/$(PACKAGE)/changelog
-	@gzip -d $(PACKAGE_DIR)/DEBIAN/changelog.gz
+	@dpkg-changelog $(PACKAGE_DIR)/DEBIAN/changelog
+	@dpkg-changelog $(PACKAGE_DIR)/usr/share/doc/$(PACKAGE)/changelog
+	@gzip -d $(PACKAGE_DIR)/DEBIAN/changelog.DEBIAN.gz
+	@mv -vf $(PACKAGE_DIR)/DEBIAN/changelog.DEBIAN $(PACKAGE_DIR)/DEBIAN/changelog
 
 	@scripts/mkdeb
 
