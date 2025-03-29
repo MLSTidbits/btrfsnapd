@@ -36,12 +36,17 @@ case "${READONLY}" in
 esac
 
 # Delete snapshots exceeding the total to keep
-# shellcheck disable=SC2012
 while true ; do
 
     OLD_SNAPSHOTS="$(btrfs su list -o --sort=ogen "${SNAPSHOT_DIR}" | awk -F'/' 'NR==1 {print $2}')"
 
-    if test "$(ls -1 "${SNAPSHOT_DIR}" | wc -l)" -gt "${TOTAL_KEEP}" ; then
+    # Using the find command is better then ls, however the one less snapshot is kept.
+    # Need to add 1 to the TOTAL_KEEP variable to keep the correct number of snapshots.
+    TOTAL_KEEP=$((TOTAL_KEEP + 1))
+
+    SNAPSHOT_LIST="$(find "${SNAPSHOT_DIR}" -maxdepth 1 -type d | wc -l)"
+
+    if test "${SNAPSHOT_LIST}" -gt "${TOTAL_KEEP}" ; then
         btrfs su delete "${SNAPSHOT_DIR}/${OLD_SNAPSHOTS}" || { sysLog "Failed to delete snapshot" ; exit 1; }
     else
         break
@@ -49,7 +54,7 @@ while true ; do
 
 done
 
-# shellcheck disable=SC2012
-echo "Total snapshots: $(ls -1 "${SNAPSHOT_DIR}" | wc -l)"
+# Echo the total number of snapshots
+echo "Total snapshots: $(($(find "${SNAPSHOT_DIR}" -maxdepth 1 -type d | wc -l ) - 1))"
 
 exit 0
