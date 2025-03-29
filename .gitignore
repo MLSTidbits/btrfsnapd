@@ -8,3 +8,6 @@ build/
 *.tar
 package/DEBIAN/control
 package/DEBIAN/changelog
+version
+che
+md5sums
