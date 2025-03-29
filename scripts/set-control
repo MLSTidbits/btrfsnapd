@@ -23,9 +23,9 @@ Installed-Size: ${totalSize}
 Homepage: ${HOMEPAGE}
 Architecture: amd64
 Depends: ${INSTALL}
+Conflicts: ${CONFLICTS}
 Build-Depends: ${BUILD}
-Description: Manage BTRFS snapshots
-    Take a snapshots after install, updating or removing an application and
-    on a regular basis using systemd timers. Leaving you with a way of restoring
-    your system to a previous state.
+Description: Manage BTRFS snapshots simply -
+    If you are using the BTRFS filesystem the way it was intended.
+    NOTE: This package is not compatible with Timeshift.
 EOF

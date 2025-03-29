@@ -1,0 +1,14 @@
+#!/bin/env bash
+
+# Set version number based on the date (%y.%m.%W) and the latest git commit id
+
+# Get the current date in the format yy.mm.WW
+version_date=$(date +'%y.%m.%W')
+
+# Get the short SHA-1 hash of the latest commit
+commit_id=$(git rev-parse --short HEAD)
+
+# Combine them to form the version number
+version_number="${version_date}-${commit_id}"
+
+echo "$version_number"

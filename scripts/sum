@@ -1,0 +1,15 @@
+#!/bin/env bash
+
+set -eo pipefail
+
+# Calculate the sum of the files that are to be installed
+cd "${PACKAGE_DIR}"
+
+find .  -type f -exec md5sum {} \; > "DEBIAN/md5sums"
+
+sed -i 's/  .\//  /g' "DEBIAN/md5sums"
+
+# Delete the lines with the DEBIAN directory
+sed -i '/DEBIAN/d' "DEBIAN/md5sums"
+
+cd "${WORKING_DIR}"
