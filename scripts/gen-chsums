@@ -1,0 +1,24 @@
+#!/bin/env bash
+
+set -eo pipefail
+
+# Calculate the sum of the files that are to be installed
+cd "${PACKAGE_DIR}"
+
+if test -f "DEBIAN/md5sums"; then rm "DEBIAN/md5sums" ; fi
+
+# Use loop to calculate the md5sum of each file
+find . -type f | while read -r file ; do
+
+    md5sum "${file}" >> "DEBIAN/md5sums"
+    # Do not include the DEBIAN directory in the md5sums file
+    sed -i '/.\/DEBIAN/d' "DEBIAN/md5sums"
+    # Remove the leading " ./" without removing the other "/" in the file path
+    sed -i 's/ .\///' "DEBIAN/md5sums"
+
+done
+
+# If the md5sums file contains the the itself, remove it
+sed -i '/md5sums/d' "DEBIAN/md5sums"
+
+cd "${WORKING_DIR}"

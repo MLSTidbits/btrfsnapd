@@ -2,18 +2,32 @@
 
 set -e
 
-test -z "${PACKAGE}" && echo "PACKAGE not set" && exit 1
-test -z "${VERSION}" && echo "VERSION not set" && exit 1
-test -z "${ARCH}" && echo "ARCH not set" && exit 1
+poolDir="../../mls/pool/main"
 
-if test -d "../../mls" && test ! -d "../../mls/pool/main/b/${PACKAGE}" ; then
-	mkdir -vp "../../mls/pool/main/b/${PACKAGE}"
-fi
+test -d "${poolDir}" || { echo "Pool directory not found"; exit 1; }
 
-if test -d "../../mls" ; then
-    rm -vf ../../mls/pool/main/b/"${PACKAGE}"/*.deb
-	dpkg-deb --root-owner-group --build "${PACKAGE_DIR}" \
-		"../../mls/pool/main/b/${PACKAGE}/${PACKAGE}_${VERSION}_${ARCH}.deb"
+test -n "${PACKAGE}" || { echo "PACKAGE not set"; exit 1; }
+test -n "${VERSION}" || { echo "VERSION not set"; exit 1; }
+test -n "${ARCH}" || { echo "ARCH not set"; exit 1; }
+
+# Create the package directory if it doesn't exist
+test -d "${poolDir}/d/${PACKAGE}" || mkdir -p "${poolDir}/d/${PACKAGE}"
+
+case "${1}" in
+	-f|--force)
+		rm -vf ${poolDir}/d/"${PACKAGE}"/*.deb
+		;;
+esac
+
+existingDeb=$(find "${poolDir}/d/${PACKAGE}/" -type f -name "*.deb")
+
+# Exit without error if a any deb file already exists
+if test -n "${existingDeb}"; then
+	echo "Deb file already exists: ${existingDeb}"
+	exit 0
 else
-	dpkg-deb --root-owner-group --build "${PACKAGE_DIR}" "${PACKAGE}_${VERSION}_${ARCH}.deb"
+	echo "Creating deb file"
+	dpkg-deb --build --root-owner-group package "${poolDir}/d/${PACKAGE}/${PACKAGE}_${VERSION}_${ARCH}.deb"
 fi
+
+exit 0
