@@ -27,7 +27,7 @@ if test -n "${existingDeb}"; then
 	exit 0
 else
 	echo "Creating deb file"
-	dpkg-deb --build --root-owner-group package "${poolDir}/d/${PACKAGE}/${PACKAGE}_${VERSION}_${ARCH}.deb"
+	dpkg-deb --build --root-owner-group package "${poolDir}/b/${PACKAGE}/${PACKAGE}_${VERSION}_${ARCH}.deb"
 fi
 
 exit 0

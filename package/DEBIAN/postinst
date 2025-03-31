@@ -10,7 +10,7 @@ case "$1" in
             if systemctl is-enabled --quiet btrfs-snapshot.timer ; then
                 systemctl daemon-reload
             else
-                systemctl enable --now btrfs-snapshots-manager.timer
+                systemctl enable --now btrfs-snapshot.timer
             fi
         fi
     ;;
