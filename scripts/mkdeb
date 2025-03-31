@@ -2,7 +2,14 @@
 
 set -e
 
-# shellcheck disable=SC2046
+test -z "${PACKAGE}" && echo "PACKAGE not set" && exit 1
+test -z "${VERSION}" && echo "VERSION not set" && exit 1
+test -z "${ARCH}" && echo "ARCH not set" && exit 1
+
+if test -d "../../mls" && test ! -d "../../mls/pool/main/b/${PACKAGE}" ; then
+	mkdir -vp "../../mls/pool/main/b/${PACKAGE}"
+fi
+
 if test -d "../../mls" ; then
     rm -vf ../../mls/pool/main/b/"${PACKAGE}"/*.deb
 	dpkg-deb --root-owner-group --build "${PACKAGE_DIR}" \
