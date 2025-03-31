@@ -1,6 +1,6 @@
 #!/bin/env make -f
 
-PACKAGE = btrfs-snapshots-manager
+PACKAGE = btrfs-snapshot
 VERSION = $(shell bash scripts/set-version)
 
 MAINTAINER = $(shell git config user.name) <$(shell git config user.email)>
