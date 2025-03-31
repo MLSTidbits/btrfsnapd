@@ -15,11 +15,11 @@ test -d "${poolDir}/d/${PACKAGE}" || mkdir -p "${poolDir}/d/${PACKAGE}"
 
 case "${1}" in
 	-f|--force)
-		rm -vf ${poolDir}/d/"${PACKAGE}"/*.deb
+		rm -vf ${poolDir}/b/"${PACKAGE}"/*.deb
 		;;
 esac
 
-existingDeb=$(find "${poolDir}/d/${PACKAGE}/" -type f -name "*.deb")
+existingDeb=$(find "${poolDir}/b/${PACKAGE}/" -type f -name "*.deb")
 
 # Exit without error if a any deb file already exists
 if test -n "${existingDeb}"; then
