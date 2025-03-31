@@ -14,7 +14,8 @@ set -eo pipefail
 source /etc/os-release
 
 # shellcheck disable=SC1091
-source /etc/btrfs-snapshots-manager.conf
+test -f /etc/btrfs-snapshot.conf && source /etc/btrfs-snapshot.conf ||
+{ sysLog "No config file found"; exit 1; }
 
 # Check if the script is running as root
 test "$(id -u)" -eq "0" || { echo "Must be root to run this script"; exit 1; }
