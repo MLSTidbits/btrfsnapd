@@ -3,9 +3,13 @@
 # Pre remove script for dpkg/apt
 case "${1}" in
     remove|purge|upgrade)
-        if systemctl is-active --quiet btrfs-snapshots-manager.timer ; then
-            systemctl disable --now btrfs-snapshots-manager.timer
-            rm -f /usr/lib/systemd/system/btrfs-snapshots-manager.timer
+        if systemctl is-active --quiet btrfs-snapshot.timer ; then
+            systemctl disable --now btrfs-snapshot.timer
+            rm -f /usr/lib/systemd/system/btrfs-snapshot.timer
+        fi
+
+        if command -v btrfs-snapshots-manager &> /dev/null ; then
+            apt purge --yes btrfs-snapshots-manager
         fi
     ;;
     *)
