@@ -1,13 +1,13 @@
 <div align=center>
-  <h1>BTRFS Snapshots Manager</h1>
-    <p>Simple BTRFS snapshots manager made for Ubuntu, but works on any Linux distribution.</p>
+  <h1>BTRFS Snapshot</h1>
+    <h3>Simple BTRFS snapshot made for Ubuntu, but works on any Linux distribution.</h3>
 </div>
 
 ## Introduction
 
-**BTRFS Snapshots Manager** is simple way to manage BTRFS snapshots on systems that use BTRFS as root filesystem and none [Ubuntu](https://ubuntu.com) subvolume layout.
+**BTRFS Snapshot** is simple way to manage BTRFS snapshots. It creates snapshots on a daily basis and deletes old snapshots to keep the disk usage under control. I designed this application to work on Debian/Ubuntu based installations that take advantage of BTRFS filesystem. However, it should work on any Linux distribution that supports BTRFS.
 
-## Features
+### Features
 
 - Create snapshots on a daily basis using Systemd timers.
 - Delete old snapshots to keep the disk usage under control.
@@ -17,47 +17,48 @@
 
 ### Using DPKG/APT
 
-You can install the project using the following command:
+You can install the project using the following command on Debian/Ubuntu based distributions add the repository.
+
+Add the source list:
 
 ```bash
-wget -c https://github.com/MichaelSchaecher/btrfs-snapshots-manager/releases/download/1.24.07-81/btrfs-snapshots-manager_1.24.07-81_all.deb
-
-sudo dpkg -i btrfs-snapshots-manager_1.24.07-81_all.deb
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/HowToNebie.gpg] https://michaelschaecher.github.io/mls stable main" |
+sudo tee /etc/apt/sources.list.d/howtonebie.list
 ```
 
-### From Source
+Add the repository key:
 
-Building and installing the project is straightforward. Follow these steps:
+```bash
+wget -qO - https://raw.githubusercontent.com/MichaelSchaecher/mls/refs/heads/main/key/HowToNebie.gpg |
+gpg --dearmor | sudo dd of=/usr/share/keyrings/HowToNebie.gpg
+```
+
+### Other Linux Distributions
+
+Installing the project is straightforward. Follow these steps:
 
 1. Clone the repository:
 
-```bash
-git clone https://github.com/MichaelMure/btrfs-snapshots-manager.git
-```
+   ```bash
+   git clone https://github.com/MichaelMure/btrfs-snapshot.git
+   ```
 
-2. Build the project:
+2. Install the project:
 
-```bash
-cd btrfs-snapshots-manager
-make build
-```
-
-3. Install the project:
-
-```bash
-sudo make install
-```
+   ```bash
+   sudo make install
+   ```
 
 ## Usage
 
-**BTRFS Snapshots Manager** is setup as a Systemd service and apt hook to create snapshots and delete old snapshots. The service is enabled by default and will create snapshots on a daily basis. You can also manually create snapshots by running the following command:
+**BTRFS Snapshot** is setup as a Systemd service and apt hook to create snapshots and delete old snapshots. The service is enabled by default and will create snapshots on a daily basis. You can also manually create snapshots by running the following command:
 
 ```bash
-sudo btrfs-snapshots-manager
+sudo btrfs-snapshot
 ```
 
 Once everything is set up and running you can rest assured that your well be able to restore your system to a previous state in case of a failure.
 
 ## Configuration
 
-The configuration file is located at `/etc/btrfs-snapshots-manager.conf`. You can change the default values to fit your needs before installing the project.
+The configuration file is located at `/etc/btrfs-snapshot.conf`. You can change the default values according to your needs.
