@@ -11,6 +11,8 @@ case "${1}" in
         if command -v btrfs-snapshots-manager &> /dev/null ; then
             apt purge --yes btrfs-snapshots-manager
         fi
+
+        if test -f /usr/bin/btrfs-snapshot ; then rm -f /usr/bin/btrfs-snapshot ; fi
     ;;
     *)
         echo "prerm called with unknown argument ${1}" >&2
