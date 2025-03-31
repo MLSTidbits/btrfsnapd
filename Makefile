@@ -42,7 +42,8 @@ debian:
 
 install:
 
-	@dpkg -i $(PACKAGE)_$(VERSION)_$(ARCH).deb
+	@cp -av $(PACKAGE_DIR)/etc /
+	@cp -av $(PACKAGE_DIR)/usr /
 
 clean:
 	@rm -vf $(PACKAGE_DIR)/DEBIAN/control \
