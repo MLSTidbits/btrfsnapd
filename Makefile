@@ -1,24 +1,26 @@
 #!/bin/env make -f
 
-PACKAGE = btrfs-snapshot
+PACKAGE = $(shell basename $(shell pwd))
 VERSION = $(shell bash scripts/set-version)
 
 MAINTAINER = $(shell git config user.name) <$(shell git config user.email)>
 
-INSTALL = btrfs-progs, bash (>= 4.4), coreutils, systemd
-CONFLICTS = timeshift
+INSTALL = dpkg-dev, git
+BUILD = debhelper (>= 11), git, make (>= 4.1), dpkg-dev
 
-BUILD = debhelper, git-changelog, make (>= 4.1), dpkg-dev, bash (>= 4.4)
+HOMEPAGE = https://github.com/MichaelSchaecher/ddns
 
-HOMEPAGE = https://github.com/MichaelSchaecher/$(PACKAGE)
-
-ARCH = amd64
-
-WORKING_DIR = $(shell pwd)
+ARCH = $(shell dpkg --print-architecture)
 
 PACKAGE_DIR = package
 
-export PACKAGE VERSION MAINTAINER INSTALL CONFLICTS BUILD HOMEPAGE ARCH WORKING_DIR PACKAGE_DIR
+WORKING_DIR = $(shell pwd)
+
+DESCRIPTION = Manage BTRFS snapshots simply -
+LONG_DESCRIPTION = Maintain snapshots of on BTRFS filesystems configured \
+	the proper way.
+
+export PACKAGE VERSION MAINTAINER INSTALL BUILD HOMEPAGE ARCH PACKAGE_DIR WORKING_DIR DESCRIPTION LONG_DESCRIPTION
 
 # Phony targets
 .PHONY: all debian clean help
@@ -30,27 +32,38 @@ debian:
 
 	@echo "Building package $(PACKAGE) version $(VERSION)"
 
-	@scripts/set-control
-	@scripts/sum
+	@echo "$(VERSION)" > $(PACKAGE_DIR)/usr/share/doc/$(PACKAGE)/version
+
+ifeq ($(MANPAGE),yes)
+	@pandoc -s -t man man/$(PACKAGE).8.md -o \
+		$(PACKAGE_DIR)/usr/share/man/man8/$(PACKAGE).8
+	@gzip --best -nvf $(PACKAGE_DIR)/usr/share/man/man8/$(PACKAGE).8
+endif
 
 	@dpkg-changelog $(PACKAGE_DIR)/DEBIAN/changelog
 	@dpkg-changelog $(PACKAGE_DIR)/usr/share/doc/$(PACKAGE)/changelog
-	@gzip -d $(PACKAGE_DIR)/DEBIAN/changelog.DEBIAN.gz
-	@mv -vf $(PACKAGE_DIR)/DEBIAN/changelog.DEBIAN $(PACKAGE_DIR)/DEBIAN/changelog
+	@gzip -d $(PACKAGE_DIR)/DEBIAN/*.gz
+	@mv $(PACKAGE_DIR)/DEBIAN/changelog.DEBIAN $(PACKAGE_DIR)/DEBIAN/changelog
 
+	@scripts/set-control
+	@scripts/gen-chsums
+
+ifeq ($(FORCE_DEB),yes)
+	@scripts/mkdeb --force
+else
 	@scripts/mkdeb
+endif
 
 install:
 
-	@cp -av $(PACKAGE_DIR)/etc /
-	@cp -av $(PACKAGE_DIR)/usr /
+	@dpkg -i $(PACKAGE)_$(VERSION)_$(ARCH).deb
 
 clean:
 	@rm -vf $(PACKAGE_DIR)/DEBIAN/control \
 		$(PACKAGE_DIR)/DEBIAN/changelog \
 		$(PACKAGE_DIR)/DEBIAN/md5sums \
 		$(PACKAGE_DIR)/usr/share/doc/$(PACKAGE)/*.gz \
-
+		$(PACKAGE_DIR)/usr/share/man/man8/$(PACKAGE).8.gz \
 
 help:
 	@echo "Usage: make [target] <variables>"
