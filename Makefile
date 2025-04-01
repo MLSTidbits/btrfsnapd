@@ -5,7 +5,7 @@ VERSION = $(shell bash scripts/set-version)
 
 MAINTAINER = $(shell git config user.name) <$(shell git config user.email)>
 
-INSTALL = dpkg-dev, git
+INSTALL = btrfs-progs, bash (>= 4.4)
 BUILD = debhelper (>= 11), git, make (>= 4.1), dpkg-dev
 
 HOMEPAGE = https://github.com/MichaelSchaecher/ddns
