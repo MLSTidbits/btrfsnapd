@@ -1,39 +1,116 @@
 #!/bin/env bash
 
-# btrfs-snapshots-manager copyright (c) 2024 by <mschaecher78@gmail.com> Michael L. Schaecher - MIT License
+# btrfs-snapshot copyright (c) 2024 by <mschaecher78@gmail.com> Michael L. Schaecher - MIT License
 
 # This script creates a btrfs snapshot of the root filesystem and deletes old snapshots helping
 # keep data usage manageable.
 
 # Log all output to syslog
-function sysLog () { logger -t btrfs-snapshots-manager "$@" ; }
+function sysLog () { logger -t btrfs-snapshot "$@" ; }
+
+function takeSnapshot () {
+
+    shift
+
+    # Check if the script is running as root
+    test "$(id -u)" -eq "0" || { echo "Must be root to run this script"; exit 1; }
+
+    # Check if btrfs is the filesystem in use.
+    mount | grep "on / type btrfs" > /dev/null 2>&1 || { sysLog "Root filesystem is not btrfs"; exit 1; }
+
+    while true ; do case "${1}" in
+        -y|--yes                ) forceSnapshot="yes" ;;
+        -r|--readonly           ) readOnly="yes"      ;;
+        *                   ) break ;;
+    esac ; shift ; done
+
+    # Check if the snapshot directory exists
+    test -d "${SNAPSHOT_DIR}" || { sysLog "Snapshot directory does not exist"; exit 1; }
+
+    if test "${readOnly}" = "yes" && test "${forceSnapshot}" = "no" ; then
+
+        read -rp "Are you sure you want to create a read-only snapshot? (y/N) " answer
+        case "${answer}" in
+            [yY]                ) readOnly="yes"       ;;
+            [nN]                ) readOnly="no"        ;;
+            ""                  ) readOnly="no"        ;;
+            *                   )
+                sysLog "failed to create snapshot: ${answer}"
+                echo "Invalid answer: ${answer}" ; exit 1
+            ;;
+        esac
+
+    fi
+
+    echo "Creating snapshot..." ; sleep 2
+
+    # Take a snapshot of the root filesystem
+    if test "${readOnly}" = "yes" ; then
+        btrfs su snapshot -r / "${SNAPSHOT_PATH}" > /dev/null 2>&1 || { sysLog "Failed to create snapshot" ; exit 1; }
+    else
+        btrfs su snapshot / "${SNAPSHOT_PATH}" > /dev/null 2>&1 || { sysLog "Failed to create snapshot" ; exit 1; }
+    fi
+
+    echo "Snapshot created: ${SNAPSHOT_PATH}" ; sleep 2
+
+    sysLog "Snapshot created: ${SNAPSHOT_PATH}"
+
+}
 
 set -eo pipefail
 
+# Set readOnly to "no" by default
+readOnly="no"
+forceSnapshot="no"
+
+versionInfo="$(cat << EOF
+btrfs-snapshot - [VERSION] $(cat /usr/share/doc/btrfs-snapshot/version || echo "unknown") - $(date +%Y-%m-%d)
+EOF
+)"
+
+helpInfo="$(cat << EOF
+${versionInfo}
+
+Usage: btrfs-snapshot create [-r|--readonly <yes|no>] [-h|--help] [-v|--version]
+
+Commands:
+    create                        Create a snapshot of the root filesystem
+    help                          Show this help message
+    version                       Show version information
+
+Options:
+    -r, --readonly    <yes|no>    Create a read-only snapshot (default: no)
+                                  WARNING: Setting this may cause boot issues with some systems.
+                                           use at your own risk.
+
+    -y, --yes                     Do not prompt for confirmation
+
+Description:
+    This script creates a snapshot of the root filesystem using btrfs and deletes old snapshots
+    to keep the total number of snapshots within a specified limit. The script must be run as root
+    and requires btrfs to be the filesystem in use.
+
+    The script uses the following environment variables:
+        - SNAPSHOT_DIR: Directory where snapshots are stored (default: /.snapshots)
+        - TOTAL_KEEP: Total number of snapshots to keep (default: 1O)
+        - SNAPSHOT_PATH: Path to the snapshot (default: /.snapshots/$(date +%Y-%m-%d_%H-%M-%S))
+
+EOF
+)"
+
 # shellcheck disable=SC1091
-source /etc/os-release
+test -f /etc/os-release && source /etc/os-release ||
+{ sysLog "No os-release file found"; exit 1; }
 
 # shellcheck disable=SC1091
 test -f /etc/btrfs-snapshot.conf && source /etc/btrfs-snapshot.conf ||
 { sysLog "No config file found"; exit 1; }
 
-# Check if the script is running as root
-test "$(id -u)" -eq "0" || { echo "Must be root to run this script"; exit 1; }
-
-# Check if btrfs is the filesystem in use.
-mount | grep "on / type btrfs" || { sysLog "Root filesystem is not btrfs"; exit 1; }
-
-case "${READONLY}" in
-    "true"        )
-        btrfs su snapshot -r / "${SNAPSHOT_PATH}" || { sysLog "Failed to create snapshot" ; exit 1; }
-    ;;
-    "false"       )
-        btrfs su snapshot / "${SNAPSHOT_PATH}" || { sysLog "Failed to create snapshot" ; exit 1; }
-    ;;
-    *)
-        sysLog "Invalid value for READONLY: ${READONLY}"
-        exit 1
-    ;;
+case "${1}" in
+    create                  ) takeSnapshot "${@}"                   ;;
+    help                    ) echo "${helpInfo}" ; exit 0           ;;
+    version                 ) echo "${versionInfo}" ; exit 0        ;;
+    *                       ) echo "Invalid argument: ${1}"; exit 1 ;;
 esac
 
 # Delete snapshots exceeding the total to keep
@@ -55,7 +132,4 @@ while true ; do
 
 done
 
-# Echo the total number of snapshots
-echo "Total snapshots: $(($(find "${SNAPSHOT_DIR}" -maxdepth 1 -type d | wc -l ) - 1))"
-
-exit 0
+echo "done" ; exit 0
