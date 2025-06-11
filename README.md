@@ -5,17 +5,19 @@
     alt="grub-btrfsd logo"
     width="580"
     height=auto
-    style="display: block; margin: 0 auto;"
+    style="display: block; margin: 0;"
   />
 </div>
 
-<h2 align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
+<h2
+  align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
   Introduction
 </h2>
 
 **BTRFS Snapshot** is simple way to manage BTRFS snapshots. It creates snapshots on a daily basis and deletes old snapshots to keep the disk usage under control. I designed this application to work on Debian/Ubuntu based installations that take advantage of BTRFS filesystem. However, it should work on any Linux distribution that supports BTRFS.
 
-<h3 style="margin-top: 24;font-size: 24px; font-weight: 600;">
+<h3
+  style="margin-top: 24;font-size: 24px; font-weight: 600;">
   Features
 </h3>
 
@@ -23,7 +25,8 @@
 - Delete old snapshots to keep the disk usage under control.
 - Easy to install and configure.
 
-<h2 align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
+<h2
+  align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
   Installation
 </h2>
 
@@ -33,20 +36,23 @@ To install **BTRFS Snapshot** just follow the setups posted on the [repository](
 sudo apt install -y btrfs-snapshot
 ```
 
-<h2 align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
+<h2
+  align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
   How and Why to Use
 </h2>
 
 **BTRFS Snapshot** is designed to be used on a daily basis to create snapshots of your BTRFS filesystem. The application will automatically create snapshots and delete old ones to keep the disk usage under control. You can configure the application to create snapshots at specific times and keep a certain number of snapshots.
 
-<h3 style="margin-top: 24;font-size: 24px; font-weight: 600;">
+<h3
+  style="margin-top: 24;font-size: 24px; font-weight: 600;">
   Configuration
 </h3>
 To configure **BTRFS Snapshot**, you can edit the configuration file located at `/etc/btrfs-snapshot.conf`. The configuration file allows you to set the following options:
 
 ---
 
-<h4 style="margin-top: 24;font-size: 16px; font-weight: 600;">
+<h4
+  style="margin-top: 24;font-size: 16px; font-weight: 600;">
   SNAPSHOT_DIR
 </h4>
 
@@ -54,7 +60,8 @@ To configure **BTRFS Snapshot**, you can edit the configuration file located at 
 >
 > Default: `/.snapshots`.
 
-<h4 style="margin-top: 24;font-size: 16px; font-weight: 600;">
+<h4
+  style="margin-top: 24;font-size: 16px; font-weight: 600;">
   DISTRO_ID
 </h4>
 
@@ -62,7 +69,8 @@ To configure **BTRFS Snapshot**, you can edit the configuration file located at 
 >
 > Default: `$(. /etc/os-release && echo $ID || echo "unknown")`.
 
-<h4 style="margin-top: 24;font-size: 16px; font-weight: 600;">
+<h4
+  style="margin-top: 24;font-size: 16px; font-weight: 600;">
   SNAPSHOT_TYPE
 </h4>
 
@@ -70,7 +78,8 @@ To configure **BTRFS Snapshot**, you can edit the configuration file located at 
 >
 > Default: `root`
 
-<h4 style="margin-top: 24;font-size: 16px; font-weight: 600;">
+<h4
+  style="margin-top: 24;font-size: 16px; font-weight: 600;">
   SET_DATE
 </h4>
 
@@ -78,7 +87,8 @@ To configure **BTRFS Snapshot**, you can edit the configuration file located at 
 >
 > Default: `true`.
 
-<h4 style="margin-top: 24;font-size: 16px; font-weight: 600;">
+<h4
+  style="margin-top: 24;font-size: 16px; font-weight: 600;">
   READ_ONLY
 </h4>
 
@@ -86,7 +96,8 @@ To configure **BTRFS Snapshot**, you can edit the configuration file located at 
 >
 > Default: `false`.
 
-<h4 style="margin-top: 24;font-size: 16px; font-weight: 600;">
+<h4
+  style="margin-top: 24;font-size: 16px; font-weight: 600;">
   TOTAL_COUNT
 </h4>
 
@@ -94,7 +105,8 @@ To configure **BTRFS Snapshot**, you can edit the configuration file located at 
 >
 > Default: `7`.
 
-<h2 align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
+<h2
+  align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
   Contributing
 </h2>
 
