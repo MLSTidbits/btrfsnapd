@@ -3,68 +3,99 @@
   <image
     src="image/logo.svg"
     alt="grub-btrfsd logo"
-    width="720px"
-    height="480px"
+    width="580"
+    height=auto
     style="display: block; margin: 0 auto;"
   />
 </div>
 
-## Introduction
+<h2 align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
+  Introduction
+</h2>
 
 **BTRFS Snapshot** is simple way to manage BTRFS snapshots. It creates snapshots on a daily basis and deletes old snapshots to keep the disk usage under control. I designed this application to work on Debian/Ubuntu based installations that take advantage of BTRFS filesystem. However, it should work on any Linux distribution that supports BTRFS.
 
-### Features
+<h3 style="margin-top: 24;font-size: 24px; font-weight: 600;">
+  Features
+</h3>
 
 - Create snapshots on a daily basis using Systemd timers.
 - Delete old snapshots to keep the disk usage under control.
 - Easy to install and configure.
 
-## Installation
+<h2 align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
+  Installation
+</h2>
 
-### Using DPKG/APT
-
-You can install the project using the following command on Debian/Ubuntu based distributions add the repository.
-
-Add the source list:
+To install **BTRFS Snapshot** just follow the setups posted on the [repository](https://repository.howtonebie.com) homepage. The installation is simple and straightforward, and it will guide you through the process of setting up the application on your system. Once you have the _APT_ repository added, you can install the application using the following command:
 
 ```bash
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/HowToNebie.gpg] https://michaelschaecher.github.io/mls stable main" |
-sudo tee /etc/apt/sources.list.d/howtonebie.list
+sudo apt install -y btrfs-snapshot
 ```
 
-Add the repository key:
+<h2 align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
+  How and Why to Use
+</h2>
 
-```bash
-wget -qO - https://raw.githubusercontent.com/MichaelSchaecher/mls/refs/heads/main/key/HowToNebie.gpg |
-gpg --dearmor | sudo dd of=/usr/share/keyrings/HowToNebie.gpg
-```
+**BTRFS Snapshot** is designed to be used on a daily basis to create snapshots of your BTRFS filesystem. The application will automatically create snapshots and delete old ones to keep the disk usage under control. You can configure the application to create snapshots at specific times and keep a certain number of snapshots.
 
-### Other Linux Distributions
+<h3 style="margin-top: 24;font-size: 24px; font-weight: 600;">
+  Configuration
+</h3>
+To configure **BTRFS Snapshot**, you can edit the configuration file located at `/etc/btrfs-snapshot.conf`. The configuration file allows you to set the following options:
 
-Installing the project is straightforward. Follow these steps:
+---
 
-1. Clone the repository:
+<h4 style="margin-top: 24;font-size: 16px; font-weight: 600;">
+  SNAPSHOT_DIR
+</h4>
 
-   ```bash
-   git clone https://github.com/MichaelMure/btrfs-snapshot.git
-   ```
+> The directory where the snapshots will be stored. For example the most common location are `/.snapshots`, `/.snapper` or `/.btrfs-snapshots`.
+>
+> Default: `/.snapshots`.
 
-2. Install the project:
+<h4 style="margin-top: 24;font-size: 16px; font-weight: 600;">
+  DISTRO_ID
+</h4>
 
-   ```bash
-   sudo make install
-   ```
+> This is the name of the distribution you are using. By default, this is set by what is stored in `/etc/os-release` file. If you want to override it, you can set it to any value you like.
+>
+> Default: `$(. /etc/os-release && echo $ID || echo "unknown")`.
 
-## Usage
+<h4 style="margin-top: 24;font-size: 16px; font-weight: 600;">
+  SNAPSHOT_TYPE
+</h4>
 
-**BTRFS Snapshot** is setup as a Systemd service and apt hook to create snapshots and delete old snapshots. The service is enabled by default and will create snapshots on a daily basis. You can also manually create snapshots by running the following command:
+> The type of snapshots to create. The options are `root`, `home`, `log`, or `custom`. The `root` type is used for the root filesystem, `home` for user home directories, `log` for log files, and `custom` for any other type of snapshot you want to create.
+>
+> Default: `root`
 
-```bash
-sudo btrfs-snapshot
-```
+<h4 style="margin-top: 24;font-size: 16px; font-weight: 600;">
+  SET_DATE
+</h4>
 
-Once everything is set up and running you can rest assured that your well be able to restore your system to a previous state in case of a failure.
+> Whether to set the date in the snapshot name. This is recommended to keep track of when the snapshot was created.
+>
+> Default: `true`.
 
-## Configuration
+<h4 style="margin-top: 24;font-size: 16px; font-weight: 600;">
+  READ_ONLY
+</h4>
 
-The configuration file is located at `/etc/btrfs-snapshot.conf`. You can change the default values according to your needs.
+> Whether to make the snapshots read-only. Booting from a read-only snapshot is bit more complicated. In order for this to work, you need to have the `/var/log`, `/var/cache`, and `/tmp` directories on a separate BTRFS subvolume.
+>
+> Default: `false`.
+
+<h4 style="margin-top: 24;font-size: 16px; font-weight: 600;">
+  TOTAL_COUNT
+</h4>
+
+> The number of snapshots to keep.
+>
+> Default: `7`.
+
+<h2 align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
+  Contributing
+</h2>
+
+If you want to contribute to the project, you can do so by submitting a pull request on the [GitHub repository](https://github.com/MichaelSchaecher/btrfs-snapshot/pulls). You can also report issues or suggest new features by opening an issue on the repository.
