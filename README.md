@@ -1,6 +1,6 @@
 <div
   align="center">
-  <image
+  <img
     src="image/logo.svg"
     alt="grub-btrfsd logo"
     width="580"
