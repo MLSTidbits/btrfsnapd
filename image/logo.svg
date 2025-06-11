@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+
+<svg
+   width="1920"
+   height="1080"
+   viewBox="0 0 48 27"
+   version="1.1"
+   id="svg8"
+   sodipodi:docname="logo.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs12" />
+  <sodipodi:namedview
+     id="namedview10"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="0.295"
+     inkscape:cx="325.42373"
+     inkscape:cy="401.69492"
+     inkscape:window-width="1600"
+     inkscape:window-height="830"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg8" />
+  <g
+     id="g2572"
+     transform="matrix(1.6379136,0,0,1.8298472,40.565995,-7.7789485)">
+    <g
+       id="g2449"
+       transform="translate(-26.34287,0.59322034)">
+      <path
+         style="fill:#00ff00;stroke-width:50.8475;stroke-linecap:square;stroke-miterlimit:0;paint-order:markers stroke fill"
+         d="M 240.67797,340.67797 V 162.71186 h 238.98305 238.98305 v 177.96611 177.9661 H 479.66102 240.67797 Z m 440.67796,139.16248 c 0,-1.09393 -381.5934,-231.05551 -400.84746,-241.56475 -1.3983,-0.76323 -2.54237,53.6176 -2.54237,120.84628 v 122.23395 h 201.69492 c 110.9322,0 201.69491,-0.68197 201.69491,-1.51548 z M 637.41569,352.4773 c 16.37078,-8.35175 34.99695,-30.1935 40.00614,-46.9127 12.2497,-40.88577 -7.83234,-85.01729 -45.95702,-100.99354 -14.03603,-5.88183 -48.89359,-5.88183 -62.92962,0 -50.11176,20.99947 -65.67729,86.48958 -30.36256,127.74691 25.10486,29.32937 65.27412,37.48899 99.24306,20.15933 z"
+         id="path412"
+         transform="scale(0.025)" />
+      <path
+         style="fill:#ffff00;stroke-width:50.8475;stroke-linecap:square;stroke-miterlimit:0;paint-order:markers stroke fill"
+         d="M 162.71186,420.33898 V 240.67797 H 181.35593 200 V 401.69492 562.71186 H 418.64407 637.28814 V 581.35593 600 H 400 162.71186 Z"
+         id="path621"
+         transform="scale(0.025)" />
+      <path
+         style="fill:#ff0000;stroke-width:50.8475;stroke-linecap:square;stroke-miterlimit:0;paint-order:markers stroke fill"
+         d="M 81.355932,500 V 322.0339 H 100 118.64407 v 159.32203 159.32204 h 220.33898 220.33898 v 18.64406 18.64407 H 320.33898 81.355932 Z"
+         id="path692"
+         transform="scale(0.025)" />
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:2.29802px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold Italic';text-align:center;writing-mode:tb-rl;text-anchor:middle;fill:#ff0000;fill-opacity:1;stroke-width:0.403948;stroke-linecap:square;stroke-miterlimit:0;paint-order:markers stroke fill"
+       x="-17.390438"
+       y="-3.9277558"
+       id="text1156"
+       transform="rotate(-90)"><tspan
+         sodipodi:role="line"
+         style="font-size:2.29801px;fill:#ff0000;fill-opacity:1;stroke-width:0.403948"
+         x="-17.390438"
+         y="-3.9277558"
+         id="tspan1158">btrfs-snapshot</tspan></text>
+  </g>
+</svg>

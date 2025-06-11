@@ -1,0 +1,13 @@
+Package: btrfs-snapshot
+Version:
+Section: utils
+Priority: optional
+Maintainer:
+Installed-Size:
+Homepage:
+Architecture: amd64
+Depends: btrfs-progs, bash (>= 4.4), grub-btrfsd
+Conflicts: timeshift
+Build-Depends: debhelper (>= 11), git, dpkg-dev,dpkg-changelog
+Description: Manage BTRFS snapshots simply -
+    Maintain snapshots of on BTRFS filesystems configured the proper way.

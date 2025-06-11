@@ -1,0 +1,12 @@
+# Disable warning for inline HTML
+MD033: false
+
+# Disable warning for missing space after hash on atx style header
+MD041: false
+
+# Disable warning for multiple consecutive blank lines
+MD013: false
+
+# Disable warning for line length
+MD025: false
+MD034: false

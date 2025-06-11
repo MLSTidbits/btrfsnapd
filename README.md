@@ -1,6 +1,12 @@
-<div align=center>
-  <h1>BTRFS Snapshot</h1>
-    <h3>Simple BTRFS snapshot made for Ubuntu, but works on any Linux distribution.</h3>
+<div
+  align="center">
+  <image
+    src="image/logo.svg"
+    alt="grub-btrfsd logo"
+    width="720px"
+    height="480px"
+    style="display: block; margin: 0 auto;"
+  />
 </div>
 
 ## Introduction
