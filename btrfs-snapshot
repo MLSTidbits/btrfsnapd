@@ -99,12 +99,22 @@ EOF
 )"
 
 # shellcheck disable=SC1091
-test -f /etc/os-release && source /etc/os-release ||
-{ sysLog "No os-release file found"; exit 1; }
+if test -f /etc/btrfs-snapshot.conf ; then
+    source /etc/btrfs-snapshot.conf
+else
+    sysLog "Configuration file /etc/btrfs-snapshot.conf not found"
+    exit 1
+fi
 
-# shellcheck disable=SC1091
-test -f /etc/btrfs-snapshot.conf && source /etc/btrfs-snapshot.conf ||
-{ sysLog "No config file found"; exit 1; }
+test ! -f /etc/os-release || source /etc/os-release
+
+_snapshotDir="${SNAPSHOT_DIR:-/.snapshots}"
+_distroName="{DISTRO_NAME:-${NAME}"
+_snapshotType="${SNAPSHOT_TYPE:-root}"
+_setDate="${SET_DATE:-true}"
+_readOnly="${READ_ONLY:-false}"
+_totalCount="${TOTAL_COUNT:-7}"
+
 
 case "${1}" in
     create                  ) takeSnapshot "${@}"                   ;;
