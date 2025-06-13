@@ -1,5 +1,0 @@
-
-Flags:
-    -h, --help                  Show help information: [ create, delete or restore ].
-
-Copyright (c) 2024 by Michael L. Schaecher <MichaelLeeSchaecher@gmail.com> under the terms of the GPLv3 License or later.
