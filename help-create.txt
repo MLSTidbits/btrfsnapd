@@ -1,0 +1,10 @@
+
+Create Flag:
+    -r, --readonly              Create a read-only snapshot: This will not allow any changes to the snapshot after creation.
+    -y, --yes                   Skip the confirmation prompt before creating the snapshot.
+    -s, --source <source>       Specify the source for the snapshot: [`root`, `home`, or `logs`].
+    -t, --target <target>       Specify the target location for the snapshot: [Default is `/.snapshots`].
+    -w, --writeable             Convert a given snapshot to a writeable state: This allows changes to be made to the snapshot after creation.
+    -h, --help                  Show help information
+
+Copyright (c) 2024 by Michael L. Schaecher <MichaelLeeSchaecher@gmail.com> under the terms of the GPLv3 License or later.
