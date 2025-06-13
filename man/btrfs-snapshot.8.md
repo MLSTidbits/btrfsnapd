@@ -87,8 +87,11 @@ _-l_, _--list_
 _-y_, _--yes_
 : Automatically answer "yes" to any prompts during the snapshot deletion process. This is useful for scripting or automation.
 
-_-p_, _--path_ \<path\>
-: Specify the source directory for the snapshot deletion. This is the directory that contains the snapshots to be deleted. If nothing is specified, then _btrfs-snapshot_ exits with an error message.
+_-p_, _--purge_ \<path\>
+: Purge a specific snapshot by providing its path. This option allows you to delete a snapshot without listing it first. The path should be the full path to the snapshot directory.
+
+_-k_, _--keep_ \<number\>
+: Specify the number of snapshots to keep when deleting. This option allows you to retain a certain number of snapshots while deleting older ones. If not specified, the default behavior is used, which may vary based on the configuration in the _btrfs-snapshot.conf_ file.
 
 ## RESTORE SNAPSHOT
 
