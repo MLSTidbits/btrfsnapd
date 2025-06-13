@@ -6,7 +6,7 @@ build/
 *.xz
 *.deb
 *.tar
-dist/
+out/
 changelog
 version
 md5sums
