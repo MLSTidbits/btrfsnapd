@@ -10,3 +10,8 @@ MD041: false
 # MD013 - Line length
 # MD013 is disabled to allow longer lines for code blocks and inline HTML
 MD013: false
+
+# Using pandoc to convert Markdown to manual pages means that title headings
+# are required for each section.
+# MD025 - Multiple top level headings
+MD025: false
