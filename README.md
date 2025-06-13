@@ -2,10 +2,8 @@
   align="center">
   <img
     src="image/logo.svg"
-    alt="grub-btrfsd logo"
-    width="580"
-    height=auto
-    style="display: block; margin: 0;"
+    alt="Simple ZRAM Logo"
+    style="display: block; margin: 0 auto;"
   />
 </div>
 
