@@ -8,13 +8,117 @@
 # Log all output to syslog
 function sysLog () { logger -t btrfs-snapshot "$@" ; }
 
+function deleteOldestSnapshot () {
+
+    local oldSnapshots snapshotList targetDir
+
+    targetDir="${1:-${_snapshotDir}}"
+
+    # Delete snapshots exceeding the total to keep
+    while true ; do
+
+        oldSnapshots="$(btrfs su list -o --sort=ogen "${targetDir}" | awk -F'/' 'NR==1 {print $2}')"
+
+        # Using the find command is better then ls, however the one less snapshot is kept.
+        # Need to add 1 to the TOTAL_KEEP variable to keep the correct number of snapshots.
+        count=$((_totalCount + 1))
+
+        snapshotList="$(find "${targetDir}" -maxdepth 1 -type d | wc -l)"
+
+        if test "${snapshotList}" -gt "${count}" ; then
+            btrfs su delete "${targetDir}/${oldSnapshots}" || { sysLog "Failed to delete snapshot" ; exit 1; }
+        else
+            break
+        fi
+
+    done
+
+}
+
 function takeSnapshot () {
+
+_createHelpInfo="$(cat << EOF
+${_versionInfo}
+
+Usage: ${_appName} create [options] <flags> arg...
+
+Options:
+    create                     Create a new snapshot based on configured settings.
+
+Flag:
+    -r, --readonly              Create a read-only snapshot: This will not allow any changes to the snapshot after creation.
+    -y, --yes                   Skip the confirmation prompt before creating the snapshot.
+    -s, --source <source>       Specify the source for the snapshot: [\`root\`, \`home\`, or \`logs\`].
+    -t, --target <target>       Specify the target location for the snapshot: [Default is \`/.snapshots\`].
+    -w, --writeable             Convert a given snapshot to a writeable state: This allows changes to be made to the snapshot after creation.
+    -h, --help                  Show help information for creating a snapshot.
+
+${_licenseInfo}
+EOF
+)"
 
     shift
 
+    local snapshotOptions confirm sourceDir targetDir snapshotOut
+
+    snapshotOptions="su snapshot"
+
     while true ; do case "${1}" in
-        -h|--help ) echo "${helpInfo}" ; cat help-create.txt ; exit 0 ;;
-    esac ; shift ; done
+        -r|--read-only              ) snapshotOptions="${snapshotOptions} -r" ; shift  ;;
+        -y|--yes                    ) confirm="yes"                           ; shift  ;;
+        -h|--help                   ) echo "${_createHelpInfo}"               ; exit 0 ;;
+        -s|--source                 )
+            # Set the source directory from which to create the snapshot.
+            case "${2}" in
+                root                ) sourceDir="/";;
+                home                ) sourceDir="/home";;
+                logs                ) sourceDir="/var/log";;
+                *                   ) sysLog "Invalid source directory: ${2}" ; exit 1 ;;
+            esac
+            shift 2
+        ;;
+        -t|--target                 )
+            # Check if a flag is next instead of a directory
+            if [[ "${2}" == -* ]] ; then targetDir="${SNAPSHOT_DIR}" ; else targetDir="${2}" ; shift 2 ; fi
+        ;;
+        -w|--writeable              )
+            # Verify that the target directory exists
+            test -d "${2}" || { sysLog "Snapshot target directory ${2} does not exist" ; exit 1 ; }
+
+            btrfs property set "${2}" ro false || {
+                sysLog "Failed to set writeable property on ${2}" ; exit 1
+            }
+
+            # Don't want to continue with the snapshot with this flag for now
+            sysLog "${2} set to writeable, skipping snapshot creation" ; exit 0
+        ;;
+        *) break ;;
+    esac ; done
+
+    # Verify that the target directory exists
+    test -d "${targetDir}" || { sysLog "Snapshot target directory ${targetDir} does not exist" ; exit 1 ; }
+
+    if test "$confirm" != "yes" ; then
+        # Prompt for confirmation before creating the snapshot
+        read -rp "Are you sure you want to create a snapshot of ${sourceDir} in ${targetDir}? [y/N] " choice
+        case "${choice}" in
+            [yY][eE][sS]|[yY]       ) ;;
+            *                       ) sysLog "Snapshot creation cancelled"    ; exit 0 ;;
+        esac
+    fi
+
+    snapshotOut="${_distroName}_${_snapshotType}_$(date +%Y%m%d+%H%M)"
+
+    # shellcheck disable=SC2086
+    btrfs ${snapshotOptions} ${sourceDir} ${targetDir}/${snapshotOut} || {
+        sysLog "Failed to create snapshot of ${sourceDir} in ${targetDir}" ; exit 1
+    }
+
+    sysLog "Snapshot of ${sourceDir} created in ${targetDir}"
+
+    echo
+
+    deleteOldestSnapshot "${targetDir}"
 
 }
 
@@ -38,21 +142,22 @@ _snapshotDir="${SNAPSHOT_DIR:-/.snapshots}"
 _setDate="${SET_DATE:-true}"
 _readOnly="${READ_ONLY:-false}"
 
+# How many snapshots to keep. This should be keep low to avoid using too much disk space.
+_totalCount="${TOTAL_COUNT:-7}"
+
 _licenseInfo="$(cat << EOF
 $_appName - Copyright (c) 2024 by Michael L. Schaecher <MichaelLeeSchaecher@gmail.com> under the terms
 of the GPLv3 License or later.
 EOF
 )"
 
-# How many snapshots to keep. This should be keep low to avoid using too much disk space.
-_totalCount="${TOTAL_COUNT:-7}"
-versionInfo="$(cat << EOF
+_versionInfo="$(cat << EOF
 ${_appName} [ version ${_appVersion} ] - ${_distroName}
 EOF
 )"
 
-helpInfo="$(cat << EOF
-${versionInfo}
+_helpInfo="$(cat << EOF
+${_versionInfo}
 
 Usage: ${_appName} [options] <flags> arg...
 
@@ -64,34 +169,18 @@ Options:
     help                        Show this help message.
     version                     Show version information.
 
+Flags:
+    -h, --help                  Show this help message for (create, delete, restore).
 
+${_licenseInfo}
 EOF
 )"
 
 case "${1}" in
-    create                  ) takeSnapshot "${@}"                        ;;
-    help                    ) echo "${helpInfo}" ; cat help.txt ; exit 0 ;;
-    version                 ) echo "${versionInfo}" ; exit 0             ;;
-    *                       ) echo "Invalid argument: ${1}"; exit 1      ;;
+    create                  ) takeSnapshot "${@}"                         ;;
+    help                    ) echo "${_helpInfo}" ; cat help.txt ; exit 0 ;;
+    version                 ) echo "${_versionInfo}" ; exit 0             ;;
+    *                       ) echo "Invalid argument: ${1}"; exit 1       ;;
 esac
-
-# Delete snapshots exceeding the total to keep
-while true ; do
-
-    OLD_SNAPSHOTS="$(btrfs su list -o --sort=ogen "${SNAPSHOT_DIR}" | awk -F'/' 'NR==1 {print $2}')"
-
-    # Using the find command is better then ls, however the one less snapshot is kept.
-    # Need to add 1 to the TOTAL_KEEP variable to keep the correct number of snapshots.
-    TOTAL_KEEP=$((TOTAL_KEEP + 1))
-
-    SNAPSHOT_LIST="$(find "${SNAPSHOT_DIR}" -maxdepth 1 -type d | wc -l)"
-
-    if test "${SNAPSHOT_LIST}" -gt "${TOTAL_KEEP}" ; then
-        btrfs su delete "${SNAPSHOT_DIR}/${OLD_SNAPSHOTS}" || { sysLog "Failed to delete snapshot" ; exit 1; }
-    else
-        break
-    fi
-
-done
 
 echo "done" ; exit 0
