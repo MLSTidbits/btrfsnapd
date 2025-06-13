@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
+# Config
+PACKAGE_NAME="$(basename "$(pwd)")"
+PACKAGE_ARCH="$(dpkg --print-architecture)"
+BUILD_DIR="out"
+DOC_DIR="${BUILD_DIR}/usr/share/doc/${PACKAGE_NAME}"
+CONTROL_FILE="${BUILD_DIR}/DEBIAN/control"
+
+# Clean build
+[[ $1 != clean ]] || { rm -rvf "$BUILD_DIR" debian/changelog doc/version ; exit 0 ; }
+
+# Ensure changelog exists
+[[ -f debian/changelog ]] || dpkg-changelog
+
+# Get version
+PACKAGE_VERSION="$(<doc/version)"
+BUILD_VERSION="$(git rev-parse --short HEAD)"
+[[ "$PACKAGE_VERSION" == *"$BUILD_VERSION"* ]] || PACKAGE_VERSION="${PACKAGE_VERSION}-${BUILD_VERSION}"
+
+echo -e "\nBuilding ${PACKAGE_NAME} ${PACKAGE_VERSION} (${PACKAGE_ARCH})"
+
+# Directory structure
+mkdir -p \
+    "$BUILD_DIR"/{DEBIAN,etc,usr/{bin,lib/systemd/system,share/man/man8}} \
+    "$DOC_DIR"
+
+# Copy files
+cp -av doc/* "$DOC_DIR/"
+cp -av COPYING "$DOC_DIR/copyright"
+cp -av README.md "$DOC_DIR/readme.md"
+cp -av CODE_OF_CONDUCT.md "$DOC_DIR/code_of_conduct.md"
+
+cp -av ./*.{service,timer} "$BUILD_DIR/usr/lib/systemd/system/"
+cp -av $PACKAGE_NAME "$BUILD_DIR/usr/bin/"
+cp -av $PACKAGE_NAME.conf "$BUILD_DIR/etc/"
+cp -av debian/* "$BUILD_DIR/DEBIAN/"
+
+# Calculate Installed-Size
+SIZE=$(du -s --exclude=DEBIAN "$BUILD_DIR" | awk '{print $1}')
+
+# Patch control file
+awk -v ver="$PACKAGE_VERSION" \
+    -v arch="$PACKAGE_ARCH" \
+    -v size="$SIZE" '
+    /^Version:/        { print "Version: " ver; next }
+    /^Architecture:/   { print "Architecture: " arch; next }
+    /^Installed-Size:/ { print "Installed-Size: " size; next }
+                       { print }
+' "$CONTROL_FILE" > "${CONTROL_FILE}.tmp" && mv "${CONTROL_FILE}.tmp" "$CONTROL_FILE"
+
+chmod +x "$BUILD_DIR/DEBIAN/"{postinst,prerm}
+
+# Build man pages
+for m in man/*.md; do
+    base=$(basename "$m" .md)
+    out="${BUILD_DIR}/usr/share/man/man8/${base}"
+    pandoc "$m" -s -t man -o "$out"
+    gzip -f9 "$out"
+done
+
+# Generate md5sums
+cd "$BUILD_DIR"
+find . -type f ! -path './DEBIAN/md5sums' -exec md5sum "{}" + |
+    sed -e '/\.\/DEBIAN\//d' -e 's| \./| |' > DEBIAN/md5sums
+cd - >/dev/null
+
+# Build package
+dpkg-deb --build --root-owner-group "$BUILD_DIR" "${PACKAGE_NAME}_${PACKAGE_VERSION}_${PACKAGE_ARCH}.deb"
