@@ -2,9 +2,9 @@ Package: btrfs-snapshot
 Version:
 Section: utils
 Priority: optional
-Maintainer:
+Maintainer: Michael Schaecher <michaelleeschaecher@gmail.com>
 Installed-Size:
-Homepage:
+Homepage: https://github.com/MichaelSchaecher/btrfs-snapshot
 Architecture: amd64
 Depends: btrfs-progs, bash (>= 4.4), grub-btrfsd
 Conflicts: timeshift
