@@ -8,11 +8,15 @@
 # shellcheck disable=SC2317
 function cleanUp () {
 
-    mountedTmp="$(mount | grep 'on /tmp/' | awk '{print $1}')"
-    umount "${mountedTmp}" || { sysLog "Failed to unmount ${mountedTmp}" ; exit 1 ; }
-    rm -rf "${_snapshotsDir}" || { sysLog "Failed to remove temporary directory ${_snapshotsDir}" ; exit 1 ; }
+    if mountedTmp="$(mount | awk '$3 ~ /^\/tmp\// { print $3}')" ; then
 
-    sysLog "Temporary directory ${_snapshotsDir} removed successfully" ; exit 0
+        umount "${mountedTmp}" || { sysLog "Failed to unmount ${mountedTmp}" ; exit 1 ; }
+        rm -Rf /tmp/tmp.* || { sysLog "Failed to remove temporary directory" ; exit 1 ; }
+
+        sysLog "Temporary directory ${_snapshotsDir} removed successfully" ; exit 0
+    else
+        sysLog "No temporary directory mounted" ; exit 0
+    fi
 
 }
 
@@ -32,7 +36,7 @@ function deleteOldestSnapshot () {
 
     local oldSnapshots snapshotList targetDir
 
-    targetDir="${_snapshotsDir}}"
+    targetDir="${_snapshotsDir}"
 
     # Delete snapshots exceeding the total to keep
     while true ; do
@@ -89,14 +93,14 @@ EOF
     rootRequired
 
     while true ; do case "${1}" in
-        -o|--oldest               ) deleteOldestSnapshot                      ; break  ;;
+        -o|--oldest               ) deleteOldestSnapshot                      ; exit 0 ;;
         -y|--yes                  ) confirm="yes"                             ; shift  ;;
         -l|--list                 )
             while IFS= read -r -d $'\0' snap; do
                 snapshotsName=$(basename "$snap") && snapshotsList+=("$snapshotsName")
             done < <(find "$targetDir" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
 
-            echo "Available snapshots:"
+            echo "Please select a snapshot to delete: (ctrl+c to cancel)"
             echo ""
 
             select snap in "${snapshotsList[@]}" ; do
@@ -309,7 +313,7 @@ EOF
 
 }
 
-set -eo pipefail
+set -evo pipefail
 
 # shellcheck disable=SC1091
 source /etc/btrfs-snapshot.conf || {
@@ -376,7 +380,7 @@ case "${1}" in
             echo ""
 
             find "${_snapshotsDir}" -mindepth 1 -maxdepth 1 -type d | sort | while read -r snap ; do
-                echo "$(basename "${snap}")"
+                basename "${snap}"
             done
         else
             echo "No snapshots found in ${_snapshotsDir}"
