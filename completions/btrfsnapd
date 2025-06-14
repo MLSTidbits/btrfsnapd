@@ -1,0 +1,35 @@
+# shellcheck disable=SC2148
+btrfsnapd_complete () {
+
+    local cur prev commands create_opt delete_opt restore_opt
+    cur="${COMP_WORDS[COMP_CWORD]}"
+
+    # shellcheck disable=SC2034
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    # Main commands
+    commands="create delete restore list help version"
+
+    # Options for each command
+    create_opt="-r --read-only -y --yes -s --source -t --target -w --writeable -h --help"
+    delete_opt="-o --oldest -l --list -y --yes -p --purge -k --keep -h --help"
+    restore_opt="-l --list -y --yes -s --source"
+
+    # Handle completions based on the current command
+
+    case "${COMP_WORDS[1]}" in
+        create          )   mapfile -t COMPREPLY < <(compgen -W "${create_opt}" -- "$cur")  ;;
+        delete          )   mapfile -t COMPREPLY < <(compgen -W "${delete_opt}" -- "$cur")  ;;
+        restore         )   mapfile -t COMPREPLY < <(compgen -W "${restore_opt}" -- "$cur") ;;
+        help | version  )   COMPREPLY=()                                                    ;;
+        *)
+            # Default to completing the main commands
+            if [[ "$COMP_CWORD" -eq 1 ]]; then
+                mapfile -t COMPREPLY < <(compgen -W "${commands}" -- "$cur")
+            fi
+        ;;
+    esac
+}
+
+# Register the completion function for btrfsnapd
+complete -F btrfsnapd_complete btrfsnapd

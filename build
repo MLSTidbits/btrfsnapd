@@ -28,6 +28,7 @@ mkdir -p \
     "$BUILD_DIR"/usr/lib/systemd/system \
     "$BUILD_DIR"/usr/share/man/man8 \
     "$BUILD_DIR"/usr/share/doc/"$PACKAGE_NAME" \
+    "$BUILD_DIR"/usr/share/bash-completion/completions
 
 # Copy files
 cp -av doc/* "$BUILD_DIR/usr/share/doc/$PACKAGE_NAME/"
