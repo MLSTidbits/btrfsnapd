@@ -93,8 +93,16 @@ EOF
     rootRequired
 
     while true ; do case "${1}" in
-        -o|--oldest               ) deleteOldestSnapshot                      ; exit 0 ;;
+        -o|--oldest               ) oldest="yes"                              ; shift  ;;
         -y|--yes                  ) confirm="yes"                             ; shift  ;;
+        -p|--purge                )
+            # Check if the target snapshot directory exists
+            test -d "${targetDir}/${2}" || {
+                sysLog "Snapshot target directory ${targetDir}/${2} does not exist" ; exit 1
+            } ; purgeSnapshot="${targetDir}/${2}"
+
+            shift 2
+        ;;
         -l|--list                 )
             while IFS= read -r -d $'\0' snap; do
                 snapshotsName=$(basename "$snap") && snapshotsList+=("$snapshotsName")
@@ -113,7 +121,13 @@ EOF
 
     if test "${confirm}" != "yes" ; then
         # Prompt for confirmation before deleting the snapshot
-        read -rp "Are you sure you want to delete the snapshot ${selectedSnapshot} in ${targetDir}? [y/N] " choice
+        if test "${oldest}" != "yes" ; then
+            read -rp "Delete the oldest snapshots? [y/N] " choice
+        elif test -n "${purgeSnapshot}" ; then
+            read -rp "Purge snapshot ${purgeSnapshot}? [y/N] " choice
+        else
+            read -rp "Delete snapshot ${selectedSnapshot} in ${targetDir}? [y/N] " choice
+        fi
         case "${choice}" in
             [yY][eE][sS]|[yY]       ) ;;
             *                       ) sysLog "Snapshot deletion cancelled"    ; exit 0 ;;
@@ -123,7 +137,8 @@ EOF
     # Verify that the target directory exists
     test -d "${targetDir}" || { sysLog "Snapshot target directory ${targetDir} does not exist" ; exit 1 ; }
 
-    deleteSnapshot "${targetDir}/${selectedSnapshot}"
+    test "${oldest}" != "yes" || deleteOldestSnapshot
+    test "${oldest}" != "no" || deleteSnapshot "${targetDir}/${selectedSnapshot}"
 
 }
 
@@ -195,22 +210,22 @@ EOF
         *) break ;;
     esac ; done
 
+    snapshotOut="${targetDir}/${_distroName}_${_snapshotType}_$(date +%Y%m%d+%H%M)"
+
     # Verify that the target directory exists
     test -d "${targetDir}" || { sysLog "Snapshot target directory ${targetDir} does not exist" ; exit 1 ; }
 
     if test "$confirm" != "yes" ; then
         # Prompt for confirmation before creating the snapshot
-        read -rp "Are you sure you want to create a snapshot of ${sourceDir} in ${targetDir}? [y/N] " choice
+        read -rp "Are you sure you want to create a snapshot of ${sourceDir} in ${snapshotOut}? [y/N] " choice
         case "${choice}" in
             [yY][eE][sS]|[yY]       ) ;;
             *                       ) sysLog "Snapshot creation cancelled"    ; exit 0 ;;
         esac
     fi
 
-    snapshotOut="${_distroName}_${_snapshotType}_$(date +%Y%m%d+%H%M)"
-
     # shellcheck disable=SC2086
-    btrfs ${snapshotOptions} ${sourceDir} ${targetDir}/${snapshotOut} || {
+    btrfs ${snapshotOptions} ${sourceDir} ${snapshotOut} || {
         sysLog "Failed to create snapshot of ${sourceDir} in ${targetDir}" ; exit 1
     }
 
@@ -313,7 +328,7 @@ EOF
 
 }
 
-set -evo pipefail
+set -eo pipefail
 
 # shellcheck disable=SC1091
 source /etc/btrfsnapd.conf || { sysLog "Configuration file /etc/btrfsnapd.conf not found" ; exit 1 ; }
@@ -321,7 +336,7 @@ source /etc/btrfsnapd.conf || { sysLog "Configuration file /etc/btrfsnapd.conf n
 test ! -f /etc/os-release || source /etc/os-release
 
 _appName="btrfs-snapshot"
-_appVersion="$(cat /usr/share/doc/btrfs-snapshot/version || echo "unknown")"
+_appVersion="$(cat /usr/share/doc/btrfsnapd/version || echo "unknown")"
 
 # Default values for general snapshot for the root filesystem
 _distroName="${DISTRO_NAME:-$NAME}"
