@@ -32,7 +32,7 @@ function deleteOldestSnapshot () {
 
     local oldSnapshots snapshotList targetDir
 
-    targetDir="${1:-${_snapshotsDir}}"
+    targetDir="${_snapshotsDir}}"
 
     # Delete snapshots exceeding the total to keep
     while true ; do
@@ -89,7 +89,7 @@ EOF
     rootRequired
 
     while true ; do case "${1}" in
-        -o|--oldest               ) deleteOldestSnapshot                      ; exit 0 ;;
+        -o|--oldest               ) deleteOldestSnapshot                      ; break  ;;
         -y|--yes                  ) confirm="yes"                             ; shift  ;;
         -l|--list                 )
             while IFS= read -r -d $'\0' snap; do
@@ -211,10 +211,6 @@ EOF
     }
 
     sysLog "Snapshot of ${sourceDir} created in ${targetDir}"
-
-    echo
-
-    deleteOldestSnapshot "${targetDir}"
 
 }
 

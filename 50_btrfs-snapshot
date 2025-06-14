@@ -1,2 +1,2 @@
 # Take a snapshot before installing or removing packages
-DPkg::Pre-Invoke {"/usr/sbin/btrfs-snapshot create --source root --yes"; } ;
+DPkg::Pre-Invoke {"/usr/bin/btrfs-snapshot create --source root --yes"; } ;
