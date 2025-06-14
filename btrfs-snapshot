@@ -5,6 +5,19 @@
 # This script creates a btrfs snapshot of the root filesystem and deletes old snapshots helping
 # keep data usage manageable.
 
+# shellcheck disable=SC2317
+function cleanUp () {
+
+    mountedTmp="$(mount | grep 'on /tmp/' | awk '{print $1}')"
+    umount "${mountedTmp}" || { sysLog "Failed to unmount ${mountedTmp}" ; exit 1 ; }
+    rm -rf "${_snapshotsDir}" || { sysLog "Failed to remove temporary directory ${_snapshotsDir}" ; exit 1 ; }
+
+    sysLog "Temporary directory ${_snapshotsDir} removed successfully" ; exit 0
+
+}
+
+function rootRequired () { (( $(id -u) == 0 )) || { sysLog "This script must be run as root" ; exit 1 ; } ; }
+
 # Log all output to syslog
 function sysLog () { logger -t btrfs-snapshot "$@" ; }
 
@@ -68,9 +81,16 @@ EOF
 
     snapshotsList=() ; targetDir="${_snapshotsDir}"
 
+    case "${1}" in
+        -h|--help                 ) echo "${_deleteHelpInfo}"                 ; exit 0 ;;
+    esac
+
+    # Check if the script is run with root privileges
+    rootRequired
+
     while true ; do case "${1}" in
         -o|--oldest               ) deleteOldestSnapshot                      ; exit 0 ;;
-        -y|--yes                    ) confirm="yes"                           ; shift  ;;
+        -y|--yes                  ) confirm="yes"                             ; shift  ;;
         -l|--list                 )
             while IFS= read -r -d $'\0' snap; do
                 snapshotsName=$(basename "$snap") && snapshotsList+=("$snapshotsName")
@@ -84,7 +104,6 @@ EOF
             done
             shift
         ;;
-        -h|--help                   ) echo "${_deleteHelpInfo}"               ; exit 0 ;;
         *) break ;;
     esac ; done
 
@@ -112,7 +131,7 @@ ${_versionInfo}
 Usage: ${_appName} create <flags> arg...
 
 Options:
-    create                     Create a new snapshot based on configured settings.
+    create                      Create a new snapshot based on configured settings.
 
 Flag:
     -r, --read-only             Create a read-only snapshot: This will not allow any changes to the snapshot
@@ -130,6 +149,13 @@ EOF
 
     shift
 
+    case "${1}" in
+        -h|--help                 ) echo "${_createHelpInfo}"                 ; exit 0 ;;
+    esac
+
+    # Check if the script is run with root privileges
+    rootRequired
+
     local snapshotOptions confirm sourceDir targetDir snapshotOut
 
     snapshotOptions="su snapshot" ; targetDir="${_snapshotsDir}" ; sourceDir="/"
@@ -137,7 +163,6 @@ EOF
     while true ; do case "${1}" in
         -r|--read-only              ) snapshotOptions="${snapshotOptions} -r" ; shift  ;;
         -y|--yes                    ) confirm="yes"                           ; shift  ;;
-        -h|--help                   ) echo "${_createHelpInfo}"               ; exit 0 ;;
         -s|--source                 )
             # Set the source directory from which to create the snapshot.
             case "${2}" in
@@ -190,6 +215,101 @@ EOF
     echo
 
     deleteOldestSnapshot "${targetDir}"
+
+}
+
+function restoreSnapshot () {
+
+    _restoreHelpInfo="$(cat << EOF
+${_versionInfo}
+
+Usage: ${_appName} restore <flags> arg...
+
+Options:
+    restore                   Restore a subvolume to a previous state.
+
+Flags:
+    -l, --list                List all available snapshots in the snapshot directory.
+    -y, --yes                 Skip the confirmation prompt before restoring the snapshot.
+    -s, --source <source>     Specify the source to be restored: [\`root\`, \`home\`, or \`logs\`].
+    -h, --help                Show help information for restoring a snapshot.
+
+${_licenseInfo}
+EOF
+)"
+
+    shift
+
+    local tmpDir fsPath snapshotsList targetDir
+
+    # Get the dev path of the btrfs filesystem
+    fsPath="$(lsblk -o fstype,path | awk '$1 == "btrfs" {print $2}')"
+
+    case "${1}" in
+        -h|--help                 ) echo "${_restoreHelpInfo}"                ; exit 0 ;;
+    esac
+
+    # Check if the script is run with root privileges
+    rootRequired
+
+    tmpDir="$(mktemp -d)"
+
+    mount "$fsPath" "$tmpDir" || { sysLog "Failed to mount btrfs filesystem $fsPath" ; exit 1 ; }
+
+    _snapshotsDir="$tmpDir/@snapshots"
+
+    while true ; do case "${1}" in
+        -l|--list                 )
+            # List all available snapshots in the snapshot subvolume
+            snapshotsList=() ; targetDir="$_snapshotsDir"
+            while IFS= read -r -d $'\0' snap; do
+                snapshotsName=$(basename "$snap") && snapshotsList+=("$snapshotsName")
+            done < <(find "$targetDir" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
+
+            test "${#snapshotsList[@]}" -eq 0 && { sysLog "No snapshots found in ${targetDir}" ; exit 1 ; }
+
+            echo "Please select a snapshot to restore from: (ctrl+c to cancel)"
+            echo ""
+
+            select snap in "${snapshotsList[@]}" ; do
+                test -z "${snap}" || { selectedSnapshot="$snap" ; break ; }
+            done
+            shift
+        ;;
+        -y|--yes                  ) confirm="yes"                             ; shift  ;;
+        -s|--source               )
+            # Set the source directory to restore
+            case "${2}" in
+                root                ) sourceDir="@";;
+                home                ) sourceDir="@home";;
+                logs                ) sourceDir="@log";;
+                *                   ) sysLog "Invalid source directory: ${2}" ; exit 1 ;;
+            esac
+            shift 2
+        ;;
+        *) break ;;
+    esac ; done
+
+    if test "${confirm}" != "yes" ; then
+        # Prompt for confirmation before restoring the snapshot
+        read -rp "Are you sure you want to restore ${sourceDir} from ${selectedSnapshot}? [y/N] " choice
+        case "${choice}" in
+            [yY][eE][sS]|[yY]       ) ;;
+            *                       ) sysLog "Snapshot restoration cancelled" ; exit 0 ;;
+        esac
+    fi
+
+    # Delete source target
+    btrfs su delete "${tmpDir}/${sourceDir}" || {
+        sysLog "Failed to delete source directory ${tmpDir}/${sourceDir}" ; exit 1
+    }
+
+    # Restore the snapshot
+    btrfs su snapshot "$tmpDir/@snapshots/${selectedSnapshot}" "${tmpDir}/${sourceDir}" || {
+        sysLog "Failed to restore snapshot ${selectedSnapshot} to ${tmpDir}/${sourceDir}" ; exit 1
+    }
+
+    sysLog "Snapshot ${selectedSnapshot} restored to ${tmpDir}/${sourceDir}"
 
 }
 
@@ -247,10 +367,13 @@ ${_licenseInfo}
 EOF
 )"
 
+trap "cleanUp" SIGINT
+
 case "${1}" in
     create                  ) takeSnapshot "${@}"                         ;;
     delete                  ) deleteSnapshotList "${@}"                   ;;
-    help                    ) echo "${_helpInfo}" ; exit 0             ;;
+    restore                 ) restoreSnapshot "${@}"                   ;;
+    help                    ) echo "${_helpInfo}" ; exit 0              ;;
     version                 ) echo "${_versionInfo}" ; exit 0             ;;
     *                       ) echo "Invalid argument: ${1}"; exit 1       ;;
 esac
