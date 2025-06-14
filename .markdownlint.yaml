@@ -1,7 +1,6 @@
 # MD033 - Inline HTML
 # MD033 is disabled to allow inline HTML for custom styling
-MD033:
-  allowed_elements: ["div", "span", "a", "img", "p", "h1", "h2", "h3", "h4"]
+MD033: false
 
 # MD041 - First line in file should be a top level heading
 # MD041 is disabled to allow files without a top-level heading
