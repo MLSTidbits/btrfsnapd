@@ -23,9 +23,10 @@ echo -e "\nBuilding ${PACKAGE_NAME} ${PACKAGE_VERSION} (${PACKAGE_ARCH})"
 # Directory structure
 mkdir -p \
     "$BUILD_DIR"/DEBIAN \
+    "$BUILD_DIR"/etc/apt/apt.conf.d \
     "$BUILD_DIR"/usr/bin \
     "$BUILD_DIR"/usr/lib/systemd/system \
-    "$BUILD_DIR"/etc/apt/apt.conf.d \
+    "$BUILD_DIR"/usr/share/man/man8 \
     "$BUILD_DIR"/usr/share/doc/"$PACKAGE_NAME" \
 
 # Copy files
