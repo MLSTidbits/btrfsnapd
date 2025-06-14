@@ -7,105 +7,99 @@
   />
 </div>
 
-<h2
-  align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
-  Introduction
-</h2>
+## Introduction
 
-**BTRFSNAPD** is simple way to manage BTRFS snapshots. It creates snapshots on a daily basis and deletes old snapshots to keep the disk usage under control. I designed this application to work on Debian/Ubuntu based installations that take advantage of BTRFS filesystem. However, it should work on any Linux distribution that supports BTRFS.
+**BTRFSNAPD** is a simple daemon that automatically creates snapshots of **<u>BTRFS</u>** subvolumes at regular intervals. It is designed to be lightweight and easy to use, making it suitable for both personal and server environments. Being a full rewrite of the original **<u>btrfs-snapshot</u>** project, it aims to provide a more efficient and user-friendly experience.
 
-<h3
-  style="margin-top: 24;font-size: 24px; font-weight: 600;">
-  Features
-</h3>
+### Features
 
-- Create snapshots on a daily basis using Systemd timers.
-- Delete old snapshots to keep the disk usage under control.
-- Easy to install and configure.
+- **Automatic Snapshots**: Create snapshots of BTRFS subvolumes at specified intervals.
+- **Multiple Subvolumes**: Support for multiple subvolumes, allowing you to manage snapshots for different parts of your filesystem.
+- **Retention Policy**: Automatically delete old snapshots based on a retention policy to save space.
+- **Configuration File**: Easy-to-edit configuration file to customize snapshot settings.
+- **Logging**: Detailed logging of snapshot creation and deletion activities for easy monitoring via system logs.
+- **Systemd Integration**: Can be easily integrated with systemd for automatic startup and management.
+- **Lightweight**: Minimal resource usage, making it suitable for both personal and server environments.
 
-<h2
-  align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
-  Installation
-</h2>
+### Installation
 
-To install **BTRFSNAPD** just follow the setups posted on the [repository](https://repository.howtonebie.com) homepage. The installation is simple and straightforward, and it will guide you through the process of setting up the application on your system. Once you have the _APT_ repository added, you can install the application using the following command:
+#### Debian-based Systems
 
-```bash
-sudo apt install -y btrfsnapd
+To install **BTRFSNAPD**, follow these steps on the official [apt repository](https://repository.howtonebie.com/) or download the latest [release](https://github.com/MichaelSchaecher/btrfsnapd/releases) Debian package: Install with `dpkg` command:
+
+```console
+sudo dpkg -i btrfsnapd_*.deb
 ```
 
-<h2
-  align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
-  How and Why to Use
-</h2>
+#### Non-Debian Systems
 
-**BTRFSNAPD** is designed to be used on a daily basis to create snapshots of your BTRFS filesystem. The application will automatically create snapshots and delete old ones to keep the disk usage under control. You can configure the application to create snapshots at specific times and keep a certain number of snapshots.
+Manual installation is also possible. You can clone the repository and run the script directly:
 
-<h3
-  style="margin-top: 24;font-size: 24px; font-weight: 600;">
-  Configuration
-</h3>
-To configure **BTRFSNAPD**, you can edit the configuration file located at `/etc/btrfsnapd.conf`. The configuration file allows you to set the following options:
+```console
+git clone https://github.com/MichaelSchaecher/btrfsnapd.git
+cd btrfsnapd
+```
 
----
+Copy the `btrfsnapd` script and related files to your desired location, such as `/usr/bin`, `/etc`. Manually installation on non-Debian systems will be available in the future.
 
-<h4
-  style="margin-top: 24;font-size: 16px; font-weight: 600;">
-  SNAPSHOT_DIR
-</h4>
+### Configuration
 
-> The directory where the snapshots will be stored. For example the most common location are `/.snapshots`, `/.snapper` or `/.btrfsnapds`.
->
-> Default: `/.snapshots`.
+The configuration file is located at `/etc/btrfsnapd.conf`. You can edit this file to specify the subvolumes you want to snapshot and the retention policy. Here is an example configuration:
 
-<h4
-  style="margin-top: 24;font-size: 16px; font-weight: 600;">
-  DISTRO_ID
-</h4>
+```bash
+#DISTRO_NAME="ubuntu"
+```
 
-> This is the name of the distribution you are using. By default, this is set by what is stored in `/etc/os-release` file. If you want to override it, you can set it to any value you like.
->
-> Default: `$(. /etc/os-release && echo $ID || echo "unknown")`.
+Uncomment the line above and replace `"ubuntu"` with your distribution name to enable the configuration.
 
-<h4
-  style="margin-top: 24;font-size: 16px; font-weight: 600;">
-  SNAPSHOT_TYPE
-</h4>
+To change the default snapshot directory location, you can modify the `SNAPSHOT_DIR` variable in the configuration file:
 
-> The type of snapshots to create. The options are `root`, `home`, `log`, or `custom`. The `root` type is used for the root filesystem, `home` for user home directories, `log` for log files, and `custom` for any other type of snapshot you want to create.
->
-> Default: `root`
+```bash
+SNAPSHOT_DIR="/path/to/your/snapshot/directory"
+```
 
-<h4
-  style="margin-top: 24;font-size: 16px; font-weight: 600;">
-  SET_DATE
-</h4>
+## Usage
 
-> Whether to set the date in the snapshot name. This is recommended to keep track of when the snapshot was created.
->
-> Default: `true`.
+If installed via package manager, the service will start automatically. You can check the status of the service with:
 
-<h4
-  style="margin-top: 24;font-size: 16px; font-weight: 600;">
-  READ_ONLY
-</h4>
+```console
+systemctl status btrfsnapd.timer
+```
 
-> Whether to make the snapshots read-only. Booting from a read-only snapshot is bit more complicated. In order for this to work, you need to have the `/var/log`, `/var/cache`, and `/tmp` directories on a separate BTRFS subvolume.
->
-> Default: `false`.
+To manually create a snapshot, you can run the following command:
 
-<h4
-  style="margin-top: 24;font-size: 16px; font-weight: 600;">
-  TOTAL_COUNT
-</h4>
+```console
+btrfsnapd create
+```
 
-> The number of snapshots to keep.
->
-> Default: `7`.
+Confirm that you want to create a snapshot by typing `[yY]` when prompted.
 
-<h2
-  align="center" style="margin-top: 48;font-size: 32px; font-weight: 700;">
-  Contributing
-</h2>
+To delete old snapshots based on the retention policy, you can run:
 
-If you want to contribute to the project, you can do so by submitting a pull request on the [GitHub repository](https://github.com/MichaelSchaecher/btrfsnapd/pulls). You can also report issues or suggest new features by opening an issue on the repository.
+```console
+btrfsnapd delete
+```
+
+Answer `y` to confirm the deletion of old snapshots. To delete a specific snapshot, you can use: `btrfsnapd delete --list` and choose the snapshot you want to delete.
+
+```console
+btrfsnapd delete --list --yes
+```
+
+Will delete the chosen snapshot without further confirmation.
+
+### Systemd Integration
+
+To change the timer interval, you can edit the systemd timer with: `sudo systemctl edit btrfsnapd.timer`. This will open an editor where you can modify the timer settings. For example, to change the interval to every 30 minutes, you can add:
+
+```ini
+# Customize the timer interval for every 12 hours on 5 a.m. and 5 p.m.
+OnCalendar=*-*-* 05:00:00,17:00:00
+```
+
+This will create snapshots at 5 a.m. and 5 p.m. every day. To apply the changes, run:
+
+```console
+sudo systemctl daemon-reload
+sudo systemctl restart btrfsnapd.timer
+```
