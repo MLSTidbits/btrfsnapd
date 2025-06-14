@@ -12,7 +12,7 @@
   Introduction
 </h2>
 
-**BTRFS Snapshot** is simple way to manage BTRFS snapshots. It creates snapshots on a daily basis and deletes old snapshots to keep the disk usage under control. I designed this application to work on Debian/Ubuntu based installations that take advantage of BTRFS filesystem. However, it should work on any Linux distribution that supports BTRFS.
+**BTRFSNAPD** is simple way to manage BTRFS snapshots. It creates snapshots on a daily basis and deletes old snapshots to keep the disk usage under control. I designed this application to work on Debian/Ubuntu based installations that take advantage of BTRFS filesystem. However, it should work on any Linux distribution that supports BTRFS.
 
 <h3
   style="margin-top: 24;font-size: 24px; font-weight: 600;">
@@ -28,10 +28,10 @@
   Installation
 </h2>
 
-To install **BTRFS Snapshot** just follow the setups posted on the [repository](https://repository.howtonebie.com) homepage. The installation is simple and straightforward, and it will guide you through the process of setting up the application on your system. Once you have the _APT_ repository added, you can install the application using the following command:
+To install **BTRFSNAPD** just follow the setups posted on the [repository](https://repository.howtonebie.com) homepage. The installation is simple and straightforward, and it will guide you through the process of setting up the application on your system. Once you have the _APT_ repository added, you can install the application using the following command:
 
 ```bash
-sudo apt install -y btrfs-snapshot
+sudo apt install -y btrfsnapd
 ```
 
 <h2
@@ -39,13 +39,13 @@ sudo apt install -y btrfs-snapshot
   How and Why to Use
 </h2>
 
-**BTRFS Snapshot** is designed to be used on a daily basis to create snapshots of your BTRFS filesystem. The application will automatically create snapshots and delete old ones to keep the disk usage under control. You can configure the application to create snapshots at specific times and keep a certain number of snapshots.
+**BTRFSNAPD** is designed to be used on a daily basis to create snapshots of your BTRFS filesystem. The application will automatically create snapshots and delete old ones to keep the disk usage under control. You can configure the application to create snapshots at specific times and keep a certain number of snapshots.
 
 <h3
   style="margin-top: 24;font-size: 24px; font-weight: 600;">
   Configuration
 </h3>
-To configure **BTRFS Snapshot**, you can edit the configuration file located at `/etc/btrfs-snapshot.conf`. The configuration file allows you to set the following options:
+To configure **BTRFSNAPD**, you can edit the configuration file located at `/etc/btrfsnapd.conf`. The configuration file allows you to set the following options:
 
 ---
 
@@ -54,7 +54,7 @@ To configure **BTRFS Snapshot**, you can edit the configuration file located at 
   SNAPSHOT_DIR
 </h4>
 
-> The directory where the snapshots will be stored. For example the most common location are `/.snapshots`, `/.snapper` or `/.btrfs-snapshots`.
+> The directory where the snapshots will be stored. For example the most common location are `/.snapshots`, `/.snapper` or `/.btrfsnapds`.
 >
 > Default: `/.snapshots`.
 
@@ -108,4 +108,4 @@ To configure **BTRFS Snapshot**, you can edit the configuration file located at 
   Contributing
 </h2>
 
-If you want to contribute to the project, you can do so by submitting a pull request on the [GitHub repository](https://github.com/MichaelSchaecher/btrfs-snapshot/pulls). You can also report issues or suggest new features by opening an issue on the repository.
+If you want to contribute to the project, you can do so by submitting a pull request on the [GitHub repository](https://github.com/MichaelSchaecher/btrfsnapd/pulls). You can also report issues or suggest new features by opening an issue on the repository.
