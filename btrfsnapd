@@ -316,9 +316,7 @@ EOF
 set -evo pipefail
 
 # shellcheck disable=SC1091
-source /etc/btrfs-snapshot.conf || {
-    sysLog "Configuration file /etc/btrfs-snapshot.conf not found" ; exit 1
-}
+source /etc/btrfsnapd.conf || { sysLog "Configuration file /etc/btrfsnapd.conf not found" ; exit 1 ; }
 
 test ! -f /etc/os-release || source /etc/os-release
 
