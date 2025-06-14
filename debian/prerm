@@ -3,16 +3,10 @@
 # Pre remove script for dpkg/apt
 case "${1}" in
     remove|purge|upgrade)
-        if systemctl is-active --quiet btrfs-snapshot.timer ; then
-            systemctl disable --now btrfs-snapshot.timer
-            rm -f /usr/lib/systemd/system/btrfs-snapshot.timer
+        if systemctl is-active --quiet btrfsnapd.timer ; then
+            systemctl disable --now btrfsnapd.timer
+            rm -f /usr/lib/systemd/system/btrfsnapd.timer
         fi
-
-        if command -v btrfs-snapshots-manager &> /dev/null ; then
-            apt purge --yes btrfs-snapshots-manager
-        fi
-
-        if test -f /usr/bin/btrfs-snapshot ; then rm -f /usr/bin/btrfs-snapshot ; fi
     ;;
     *)
         echo "prerm called with unknown argument ${1}" >&2

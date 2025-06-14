@@ -5,19 +5,10 @@ case "$1" in
     configure)
         # Older version placed the main script in /usr/sbin, newer versions in /usr/bin
         # remove the file if it exists in the old location
-        if [ -f /usr/sbin/btrfs-snapshots-manager ]; then
-            rm -f /usr/sbin/btrfs-snapshot
-        fi
-
-        # Enable the service or reload the daemon
-        if systemctl is-active --quiet btrfs-snapshots-manager.timer ; then
-            systemctl disable --now btrfs-snapshots-manager.timer
+        if systemctl is-enabled --quiet btrfsnapd.timer ; then
+            systemctl daemon-reload
         else
-            if systemctl is-enabled --quiet btrfs-snapshot.timer ; then
-                systemctl daemon-reload
-            else
-                systemctl enable --now btrfs-snapshot.timer
-            fi
+            systemctl enable --now btrfsnapd.timer
         fi
     ;;
     abort-upgrade|abort-remove|abort-deconfigure)
