@@ -37,6 +37,7 @@ cp -av CODE_OF_CONDUCT.md "$BUILD_DIR/usr/share/doc/$PACKAGE_NAME/code_of_conduc
 cp -av ./*.{service,timer} "$BUILD_DIR/usr/lib/systemd/system/"
 cp -av $PACKAGE_NAME "$BUILD_DIR/usr/bin/"
 cp -av $PACKAGE_NAME.conf "$BUILD_DIR/etc/"
+cp -av 50_$PACKAGE_NAME "$BUILD_DIR/etc/apt/apt.conf.d/"
 cp -av debian/* "$BUILD_DIR/DEBIAN/"
 
 # Calculate Installed-Size
