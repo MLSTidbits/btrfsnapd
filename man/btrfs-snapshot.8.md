@@ -57,7 +57,7 @@ btrfs-snapshot create [options]
 
 The `source` and `target` are specified in the _btrfs-snapshot.conf_ file, which is located in the `/etc/btrfs-snapshot/` directory. This file contains the configuration for the snapshot creation process, including the source and target directories.
 
-_-r_, _--readonly_
+_-r_, _--read-only_
 : Create a read-only snapshot. This option is useful for preserving the state of the filesystem without allowing further modifications.
 
 _-y_, _--yes_
