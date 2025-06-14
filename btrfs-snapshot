@@ -132,7 +132,7 @@ EOF
 
     local snapshotOptions confirm sourceDir targetDir snapshotOut
 
-    snapshotOptions="su snapshot" ; targetDir="${_snapshotsDir}"
+    snapshotOptions="su snapshot" ; targetDir="${_snapshotsDir}" ; sourceDir="/"
 
     while true ; do case "${1}" in
         -r|--read-only              ) snapshotOptions="${snapshotOptions} -r" ; shift  ;;
