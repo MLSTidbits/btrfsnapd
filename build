@@ -5,7 +5,6 @@ set -eo pipefail
 PACKAGE_NAME="$(basename "$(pwd)")"
 PACKAGE_ARCH="$(dpkg --print-architecture)"
 BUILD_DIR="out"
-DOC_DIR="${BUILD_DIR}/usr/share/doc/${PACKAGE_NAME}"
 CONTROL_FILE="${BUILD_DIR}/DEBIAN/control"
 
 # Clean build
@@ -23,14 +22,17 @@ echo -e "\nBuilding ${PACKAGE_NAME} ${PACKAGE_VERSION} (${PACKAGE_ARCH})"
 
 # Directory structure
 mkdir -p \
-    "$BUILD_DIR"/{DEBIAN,etc,usr/{bin,lib/systemd/system,share/man/man8}} \
-    "$DOC_DIR"
+    "$BUILD_DIR"/DEBIAN \
+    "$BUILD_DIR"/usr/bin \
+    "$BUILD_DIR"/usr/lib/systemd/system \
+    "$BUILD_DIR"/etc/apt/apt.conf.d \
+    "$BUILD_DIR"/usr/share/doc/"$PACKAGE_NAME" \
 
 # Copy files
-cp -av doc/* "$DOC_DIR/"
-cp -av COPYING "$DOC_DIR/copyright"
-cp -av README.md "$DOC_DIR/readme.md"
-cp -av CODE_OF_CONDUCT.md "$DOC_DIR/code_of_conduct.md"
+cp -av doc/* "$BUILD_DIR/usr/share/doc/$PACKAGE_NAME/"
+cp -av COPYING "$BUILD_DIR/usr/share/doc/$PACKAGE_NAME/copyright"
+cp -av README.md "$BUILD_DIR/usr/share/doc/$PACKAGE_NAME/readme.md"
+cp -av CODE_OF_CONDUCT.md "$BUILD_DIR/usr/share/doc/$PACKAGE_NAME/code_of_conduct.md"
 
 cp -av ./*.{service,timer} "$BUILD_DIR/usr/lib/systemd/system/"
 cp -av $PACKAGE_NAME "$BUILD_DIR/usr/bin/"
