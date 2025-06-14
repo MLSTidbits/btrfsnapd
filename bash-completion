@@ -18,10 +18,10 @@ btrfsnapd_complete () {
     # Handle completions based on the current command
 
     case "${COMP_WORDS[1]}" in
-        create          )   mapfile -t COMPREPLY < <(compgen -W "${create_opt}" -- "$cur")  ;;
-        delete          )   mapfile -t COMPREPLY < <(compgen -W "${delete_opt}" -- "$cur")  ;;
-        restore         )   mapfile -t COMPREPLY < <(compgen -W "${restore_opt}" -- "$cur") ;;
-        help | version  )   COMPREPLY=()                                                    ;;
+        create                  )   mapfile -t COMPREPLY < <(compgen -W "${create_opt}" -- "$cur")  ;;
+        delete                  )   mapfile -t COMPREPLY < <(compgen -W "${delete_opt}" -- "$cur")  ;;
+        restore                 )   mapfile -t COMPREPLY < <(compgen -W "${restore_opt}" -- "$cur") ;;
+        list | help | version   )   COMPREPLY=()                                                    ;;
         *)
             # Default to completing the main commands
             if [[ "$COMP_CWORD" -eq 1 ]]; then
