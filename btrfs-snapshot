@@ -8,11 +8,18 @@
 # Log all output to syslog
 function sysLog () { logger -t btrfs-snapshot "$@" ; }
 
+function deleteSnapshot () {
+
+    btrfs su delete "${1}" || { sysLog "Failed to delete snapshot ${1}" ; exit 1 ; }
+    sysLog "Snapshot ${1} deleted successfully"
+
+}
+
 function deleteOldestSnapshot () {
 
     local oldSnapshots snapshotList targetDir
 
-    targetDir="${1:-${_snapshotDir}}"
+    targetDir="${1:-${_snapshotsDir}}"
 
     # Delete snapshots exceeding the total to keep
     while true ; do
@@ -26,7 +33,7 @@ function deleteOldestSnapshot () {
         snapshotList="$(find "${targetDir}" -maxdepth 1 -type d | wc -l)"
 
         if test "${snapshotList}" -gt "${count}" ; then
-            btrfs su delete "${targetDir}/${oldSnapshots}" || { sysLog "Failed to delete snapshot" ; exit 1; }
+            deleteSnapshot "${targetDir}/${oldSnapshots}"
         else
             break
         fi
@@ -35,22 +42,86 @@ function deleteOldestSnapshot () {
 
 }
 
+function deleteSnapshotList () {
+
+    _deleteHelpInfo="$(cat << EOF
+${_versionInfo}
+
+Usage: ${_appName} delete <flags> arg...
+
+Options:
+    delete                     Delete a snapshot based on configured settings.
+
+Flags:
+    -o, --oldest               Delete the oldest snapshot in the snapshot directory.
+    -l, --list                 List all available snapshots in the snapshot directory.
+    -y, --yes                  Skip the confirmation prompt before deleting the snapshot.
+    -h, --help                 Show help information for deleting a snapshot.
+
+${_licenseInfo}
+EOF
+)"
+
+    local snapshotsList snapshotsName targetDir
+
+    shift
+
+    snapshotsList=() ; targetDir="${_snapshotsDir}"
+
+    while true ; do case "${1}" in
+        -o|--oldest               ) deleteOldestSnapshot                      ; exit 0 ;;
+        -y|--yes                    ) confirm="yes"                           ; shift  ;;
+        -l|--list                 )
+            while IFS= read -r -d $'\0' snap; do
+                snapshotsName=$(basename "$snap") && snapshotsList+=("$snapshotsName")
+            done < <(find "$targetDir" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
+
+            echo "Available snapshots:"
+            echo ""
+
+            select snap in "${snapshotsList[@]}" ; do
+                test -z "${snap}" || { selectedSnapshot="$snap" ; break ; }
+            done
+            shift
+        ;;
+        -h|--help                   ) echo "${_deleteHelpInfo}"               ; exit 0 ;;
+        *) break ;;
+    esac ; done
+
+    if test "${confirm}" != "yes" ; then
+        # Prompt for confirmation before deleting the snapshot
+        read -rp "Are you sure you want to delete the snapshot ${selectedSnapshot} in ${targetDir}? [y/N] " choice
+        case "${choice}" in
+            [yY][eE][sS]|[yY]       ) ;;
+            *                       ) sysLog "Snapshot deletion cancelled"    ; exit 0 ;;
+        esac
+    fi
+
+    # Verify that the target directory exists
+    test -d "${targetDir}" || { sysLog "Snapshot target directory ${targetDir} does not exist" ; exit 1 ; }
+
+    deleteSnapshot "${targetDir}/${selectedSnapshot}"
+
+}
+
 function takeSnapshot () {
 
 _createHelpInfo="$(cat << EOF
 ${_versionInfo}
 
-Usage: ${_appName} create [options] <flags> arg...
+Usage: ${_appName} create <flags> arg...
 
 Options:
     create                     Create a new snapshot based on configured settings.
 
 Flag:
-    -r, --readonly              Create a read-only snapshot: This will not allow any changes to the snapshot after creation.
+    -r, --read-only             Create a read-only snapshot: This will not allow any changes to the snapshot
+                                after creation.
     -y, --yes                   Skip the confirmation prompt before creating the snapshot.
     -s, --source <source>       Specify the source for the snapshot: [\`root\`, \`home\`, or \`logs\`].
     -t, --target <target>       Specify the target location for the snapshot: [Default is \`/.snapshots\`].
-    -w, --writeable             Convert a given snapshot to a writeable state: This allows changes to be made to the snapshot after creation.
+    -w, --writeable             Convert a given snapshot to a writeable state: This allows changes to be made
+                                to the snapshot after creation.
     -h, --help                  Show help information for creating a snapshot.
 
 ${_licenseInfo}
@@ -61,7 +132,7 @@ EOF
 
     local snapshotOptions confirm sourceDir targetDir snapshotOut
 
-    snapshotOptions="su snapshot"
+    snapshotOptions="su snapshot" ; targetDir="${_snapshotsDir}"
 
     while true ; do case "${1}" in
         -r|--read-only              ) snapshotOptions="${snapshotOptions} -r" ; shift  ;;
@@ -89,7 +160,7 @@ EOF
                 sysLog "Failed to set writeable property on ${2}" ; exit 1
             }
 
-            # Don't want to continue with the snapshot with this flag for now
+            # Don't want to continue with the snapshot with this flag for now.
             sysLog "${2} set to writeable, skipping snapshot creation" ; exit 0
         ;;
         *) break ;;
@@ -138,7 +209,7 @@ _appVersion="$(cat /usr/share/doc/btrfs-snapshot/version || echo "unknown")"
 _distroName="${DISTRO_NAME:-$NAME}"
 _snapshotType="${SNAPSHOT_TYPE:-root}"
 
-_snapshotDir="${SNAPSHOT_DIR:-/.snapshots}"
+_snapshotsDir="${SNAPSHOT_DIR:-/.snapshots}"
 _setDate="${SET_DATE:-true}"
 _readOnly="${READ_ONLY:-false}"
 
@@ -162,15 +233,15 @@ ${_versionInfo}
 Usage: ${_appName} [options] <flags> arg...
 
 Options:
-    create                      Create a new snapshot based on configured settings: [use -h, --help for more options].
-    delete                      Delete a snapshot based on configured settings: [use -h, --help for more options].
-    restore                     Restore a subvolume to a previous state: [use -h, --help for more options].
+    create                      Create a new snapshot based on configured settings.
+    delete                      Delete a snapshot based on configured settings
+    restore                     Restore a subvolume to a previous state
     list                        List all snapshots in the snapshot directory.
     help                        Show this help message.
     version                     Show version information.
 
 Flags:
-    -h, --help                  Show this help message for (create, delete, restore).
+    -h, --help                  Show help information for options: (\`create\`, \`delete\`, \`restore\`)
 
 ${_licenseInfo}
 EOF
@@ -178,7 +249,8 @@ EOF
 
 case "${1}" in
     create                  ) takeSnapshot "${@}"                         ;;
-    help                    ) echo "${_helpInfo}" ; cat help.txt ; exit 0 ;;
+    delete                  ) deleteSnapshotList "${@}"                   ;;
+    help                    ) echo "${_helpInfo}" ; exit 0             ;;
     version                 ) echo "${_versionInfo}" ; exit 0             ;;
     *                       ) echo "Invalid argument: ${1}"; exit 1       ;;
 esac
