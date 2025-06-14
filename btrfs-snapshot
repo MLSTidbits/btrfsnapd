@@ -370,12 +370,26 @@ EOF
 trap "cleanUp" SIGINT
 
 case "${1}" in
-    create                  ) takeSnapshot "${@}"                         ;;
-    delete                  ) deleteSnapshotList "${@}"                   ;;
-    restore                 ) restoreSnapshot "${@}"                   ;;
-    help                    ) echo "${_helpInfo}" ; exit 0              ;;
-    version                 ) echo "${_versionInfo}" ; exit 0             ;;
-    *                       ) echo "Invalid argument: ${1}"; exit 1       ;;
+    create                  ) takeSnapshot "${@}"                                      ;;
+    delete                  ) deleteSnapshotList "${@}"                                ;;
+    restore                 ) restoreSnapshot "${@}"                                   ;;
+    list                    )
+        # List all snapshots in the snapshot directory
+        if test -d "${_snapshotsDir}" ; then
+            echo "Available snapshots in ${_snapshotsDir}:"
+            echo ""
+
+            find "${_snapshotsDir}" -mindepth 1 -maxdepth 1 -type d | sort | while read -r snap ; do
+                echo "$(basename "${snap}")"
+            done
+        else
+            echo "No snapshots found in ${_snapshotsDir}"
+        fi
+        exit 0
+    ;;
+    help                    ) echo "${_helpInfo}"                             ; exit 0 ;;
+    version                 ) echo "${_versionInfo}"                          ; exit 0 ;;
+    *                       ) echo "Invalid argument: ${1}"                   ; exit 1 ;;
 esac
 
 echo "done" ; exit 0
