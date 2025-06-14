@@ -2,7 +2,7 @@
   align="center">
   <img
     src="image/logo.svg"
-    alt="Simple ZRAM Logo"
+    alt="BTRFSNAPD Logo"
     style="display: block; margin: 0 auto;"
   />
 </div>
