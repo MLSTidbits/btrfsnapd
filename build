@@ -8,7 +8,7 @@ BUILD_DIR="out"
 CONTROL_FILE="${BUILD_DIR}/DEBIAN/control"
 
 # Clean build
-[[ $1 != clean ]] || { rm -rvf "$BUILD_DIR" debian/changelog doc/version ; exit 0 ; }
+[[ $1 != clean ]] || { rm -rvf "$BUILD_DIR" debian/changelog doc/version *.deb ; exit 0 ; }
 
 # Ensure changelog exists
 [[ -f debian/changelog ]] || dpkg-changelog
