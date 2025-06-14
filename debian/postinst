@@ -3,6 +3,12 @@
 # Automatically added by dh_installinit
 case "$1" in
     configure)
+        # Older version placed the main script in /usr/sbin, newer versions in /usr/bin
+        # remove the file if it exists in the old location
+        if [ -f /usr/sbin/btrfs-snapshots-manager ]; then
+            rm -f /usr/sbin/btrfs-snapshot
+        fi
+
         # Enable the service or reload the daemon
         if systemctl is-active --quiet btrfs-snapshots-manager.timer ; then
             systemctl disable --now btrfs-snapshots-manager.timer
