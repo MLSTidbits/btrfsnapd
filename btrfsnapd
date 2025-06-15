@@ -5,6 +5,9 @@
 # This script creates a btrfs snapshot of the root filesystem and deletes old snapshots helping
 # keep data usage manageable.
 
+# Log all output to syslog
+function sysLog () { logger -t btrfs-snapshot "$@" ; }
+
 # shellcheck disable=SC2317
 function cleanUp () {
 
@@ -20,151 +23,11 @@ function cleanUp () {
 
 }
 
-function rootRequired () { (( $(id -u) == 0 )) || { sysLog "This script must be run as root" ; exit 1 ; } ; }
-
-# Log all output to syslog
-function sysLog () { logger -t btrfs-snapshot "$@" ; }
-
-function deleteSnapshot () {
-
-    btrfs su delete "${1}" || { sysLog "Failed to delete snapshot ${1}" ; exit 1 ; }
-    sysLog "Snapshot ${1} deleted successfully"
-
-}
-
-function deleteOldestSnapshot () {
-
-    local oldSnapshots snapshotList targetDir
-
-    targetDir="${_snapshotsDir}"
-
-    # Delete snapshots exceeding the total to keep
-    while true ; do
-
-        oldSnapshots="$(btrfs su list -o --sort=ogen "${targetDir}" | awk -F'/' 'NR==1 {print $2}')"
-
-        # Using the find command is better then ls, however the one less snapshot is kept.
-        # Need to add 1 to the TOTAL_KEEP variable to keep the correct number of snapshots.
-        count=$((_totalCount + 1))
-
-        snapshotList="$(find "${targetDir}" -maxdepth 1 -type d | wc -l)"
-
-        if test "${snapshotList}" -gt "${count}" ; then
-            deleteSnapshot "${targetDir}/${oldSnapshots}"
-        else
-            break
-        fi
-
-    done
-
-}
-
-function deleteSnapshotList () {
-
-    _deleteHelpInfo="$(cat << EOF
-${_versionInfo}
-
-Usage: ${_appName} delete <flags> arg...
-
-Options:
-    delete                     Delete a snapshot based on configured settings.
-
-Flags:
-    -o, --oldest               Delete the oldest snapshot in the snapshot directory.
-    -l, --list                 List all available snapshots in the snapshot directory.
-    -y, --yes                  Skip the confirmation prompt before deleting the snapshot.
-    -h, --help                 Show help information for deleting a snapshot.
-
-${_licenseInfo}
-EOF
-)"
-
-    local snapshotsList snapshotsName targetDir
-
-    shift
-
-    snapshotsList=() ; targetDir="${_snapshotsDir}"
-
-    case "${1}" in
-        -h|--help                 ) echo "${_deleteHelpInfo}"                 ; exit 0 ;;
-    esac
-
-    # Check if the script is run with root privileges
-    rootRequired
-
-    while true ; do case "${1}" in
-        -o|--oldest               ) oldest="yes"                              ; shift  ;;
-        -y|--yes                  ) confirm="yes"                             ; shift  ;;
-        -p|--purge                )
-            # Check if the target snapshot directory exists
-            test -d "${targetDir}/${2}" || {
-                sysLog "Snapshot target directory ${targetDir}/${2} does not exist" ; exit 1
-            } ; purgeSnapshot="${targetDir}/${2}"
-
-            shift 2
-        ;;
-        -l|--list                 )
-            while IFS= read -r -d $'\0' snap; do
-                snapshotsName=$(basename "$snap") && snapshotsList+=("$snapshotsName")
-            done < <(find "$targetDir" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
-
-            echo "Please select a snapshot to delete: (ctrl+c to cancel)"
-            echo ""
-
-            select snap in "${snapshotsList[@]}" ; do
-                test -z "${snap}" || { selectedSnapshot="$snap" ; break ; }
-            done
-            shift
-        ;;
-        *) break ;;
-    esac ; done
-
-    if test "${confirm}" != "yes" ; then
-        # Prompt for confirmation before deleting the snapshot
-        if test "${oldest}" != "yes" ; then
-            read -rp "Delete the oldest snapshots? [y/N] " choice
-        elif test -n "${purgeSnapshot}" ; then
-            read -rp "Purge snapshot ${purgeSnapshot}? [y/N] " choice
-        else
-            read -rp "Delete snapshot ${selectedSnapshot} in ${targetDir}? [y/N] " choice
-        fi
-        case "${choice}" in
-            [yY][eE][sS]|[yY]       ) ;;
-            *                       ) sysLog "Snapshot deletion cancelled"    ; exit 0 ;;
-        esac
-    fi
-
-    # Verify that the target directory exists
-    test -d "${targetDir}" || { sysLog "Snapshot target directory ${targetDir} does not exist" ; exit 1 ; }
-
-    test "${oldest}" != "yes" || deleteOldestSnapshot
-    test "${oldest}" != "no" || deleteSnapshot "${targetDir}/${selectedSnapshot}"
-
+function rootRequired () {
+    (( $(id -u) == 0 )) || { sysLog "This script must be run as root" ; exit 1 ; }
 }
 
 function takeSnapshot () {
-
-_createHelpInfo="$(cat << EOF
-${_versionInfo}
-
-Usage: ${_appName} create <flags> arg...
-
-Options:
-    create                      Create a new snapshot based on configured settings.
-
-Flag:
-    -r, --read-only             Create a read-only snapshot: This will not allow any changes to the snapshot
-                                after creation.
-    -y, --yes                   Skip the confirmation prompt before creating the snapshot.
-    -s, --source <source>       Specify the source for the snapshot: [\`root\`, \`home\`, or \`logs\`].
-    -t, --target <target>       Specify the target location for the snapshot: [Default is \`/.snapshots\`].
-    -w, --writeable             Convert a given snapshot to a writeable state: This allows changes to be made
-                                to the snapshot after creation.
-    -h, --help                  Show help information for creating a snapshot.
-
-${_licenseInfo}
-EOF
-)"
 
     shift
 
@@ -233,25 +96,106 @@ EOF
 
 }
 
+function deleteSnapshot () {
+
+    btrfs su delete "${1}" || { sysLog "Failed to delete snapshot ${1}" ; exit 1 ; }
+    sysLog "Snapshot ${1} deleted successfully"
+
+}
+
+function deleteOldestSnapshot () {
+
+    local oldSnapshots snapshotList targetDir
+
+    targetDir="${_snapshotsDir}"
+
+    # Delete snapshots exceeding the total to keep
+    while true ; do
+
+        oldSnapshots="$(btrfs su list -o --sort=ogen "${targetDir}" | awk -F'/' 'NR==1 {print $2}')"
+
+        # Using the find command is better then ls, however the one less snapshot is kept.
+        # Need to add 1 to the TOTAL_KEEP variable to keep the correct number of snapshots.
+        count=$((_totalCount + 1))
+
+        snapshotList="$(find "${targetDir}" -maxdepth 1 -type d | wc -l)"
+
+        if test "${snapshotList}" -gt "${count}" ; then
+            deleteSnapshot "${targetDir}/${oldSnapshots}"
+        else
+            break
+        fi
+
+    done
+
+}
+
+function deleteSnapshotList () {
+
+    local snapshotsList snapshotsName targetDir
+
+    shift
+
+    snapshotsList=() ; targetDir="${_snapshotsDir}"
+
+    case "${1}" in
+        -h|--help                 ) echo "${_deleteHelpInfo}"                 ; exit 0 ;;
+    esac
+
+    # Check if the script is run with root privileges
+    rootRequired
+
+    while true ; do case "${1}" in
+        -o|--oldest               ) oldest="yes"                              ; shift  ;;
+        -y|--yes                  ) confirm="yes"                             ; shift  ;;
+        -p|--purge                )
+            # Check if the target snapshot directory exists
+            test -d "${targetDir}/${2}" || {
+                sysLog "Snapshot target directory ${targetDir}/${2} does not exist" ; exit 1
+            } ; purgeSnapshot="${targetDir}/${2}"
+
+            shift 2
+        ;;
+        -l|--list                 )
+            while IFS= read -r -d $'\0' snap; do
+                snapshotsName=$(basename "$snap") && snapshotsList+=("$snapshotsName")
+            done < <(find "$targetDir" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
+
+            echo "Please select a snapshot to delete: (ctrl+c to cancel)"
+            echo ""
+
+            select snap in "${snapshotsList[@]}" ; do
+                test -z "${snap}" || { selectedSnapshot="$snap" ; break ; }
+            done
+            shift
+        ;;
+        *) break ;;
+    esac ; done
+
+    if test "${confirm}" != "yes" ; then
+        # Prompt for confirmation before deleting the snapshot
+        if test "${oldest}" != "yes" ; then
+            read -rp "Delete the oldest snapshots? [y/N] " choice
+        elif test -n "${purgeSnapshot}" ; then
+            read -rp "Purge snapshot ${purgeSnapshot}? [y/N] " choice
+        else
+            read -rp "Delete snapshot ${selectedSnapshot} in ${targetDir}? [y/N] " choice
+        fi
+        case "${choice}" in
+            [yY][eE][sS]|[yY]       ) ;;
+            *                       ) sysLog "Snapshot deletion cancelled"    ; exit 0 ;;
+        esac
+    fi
+
+    # Verify that the target directory exists
+    test -d "${targetDir}" || { sysLog "Snapshot target directory ${targetDir} does not exist" ; exit 1 ; }
+
+    test "${oldest}" != "yes" || deleteOldestSnapshot
+    test "${oldest}" != "no" || deleteSnapshot "${targetDir}/${selectedSnapshot}"
+
+}
+
 function restoreSnapshot () {
-
-    _restoreHelpInfo="$(cat << EOF
-${_versionInfo}
-
-Usage: ${_appName} restore <flags> arg...
-
-Options:
-    restore                   Restore a subvolume to a previous state.
-
-Flags:
-    -l, --list                List all available snapshots in the snapshot directory.
-    -y, --yes                 Skip the confirmation prompt before restoring the snapshot.
-    -s, --source <source>     Specify the source to be restored: [\`root\`, \`home\`, or \`logs\`].
-    -h, --help                Show help information for restoring a snapshot.
-
-${_licenseInfo}
-EOF
-)"
 
     shift
 
@@ -375,6 +319,64 @@ Options:
 
 Flags:
     -h, --help                  Show help information for options: (\`create\`, \`delete\`, \`restore\`)
+
+${_licenseInfo}
+EOF
+)"
+
+_createHelpInfo="$(cat << EOF
+${_versionInfo}
+
+Usage: ${_appName} create <flags> arg...
+
+Options:
+    create                      Create a new snapshot based on configured settings.
+
+Flag:
+    -r, --read-only             Create a read-only snapshot: This will not allow any changes to the snapshot
+                                after creation.
+    -y, --yes                   Skip the confirmation prompt before creating the snapshot.
+    -s, --source <source>       Specify the source for the snapshot: [\`root\`, \`home\`, or \`logs\`].
+    -t, --target <target>       Specify the target location for the snapshot: [Default is \`/.snapshots\`].
+    -w, --writeable             Convert a given snapshot to a writeable state: This allows changes to be made
+                                to the snapshot after creation.
+    -h, --help                  Show help information for creating a snapshot.
+
+${_licenseInfo}
+EOF
+)"
+
+_deleteHelpInfo="$(cat << EOF
+${_versionInfo}
+
+Usage: ${_appName} delete <flags> arg...
+
+Options:
+    delete                     Delete a snapshot based on configured settings.
+
+Flags:
+    -o, --oldest               Delete the oldest snapshot in the snapshot directory.
+    -l, --list                 List all available snapshots in the snapshot directory.
+    -y, --yes                  Skip the confirmation prompt before deleting the snapshot.
+    -h, --help                 Show help information for deleting a snapshot.
+
+${_licenseInfo}
+EOF
+)"
+
+_restoreHelpInfo="$(cat << EOF
+${_versionInfo}
+
+Usage: ${_appName} restore <flags> arg...
+
+Options:
+    restore                   Restore a subvolume to a previous state.
+
+Flags:
+    -l, --list                List all available snapshots in the snapshot directory.
+    -y, --yes                 Skip the confirmation prompt before restoring the snapshot.
+    -s, --source <source>     Specify the source to be restored: [\`root\`, \`home\`, or \`logs\`].
+    -h, --help                Show help information for restoring a snapshot.
 
 ${_licenseInfo}
 EOF
