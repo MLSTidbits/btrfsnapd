@@ -8,19 +8,18 @@
 # Log all output to syslog
 function sysLog () { logger -t btrfs-snapshot "$@" ; }
 
-# shellcheck disable=SC2317
 function cleanUp () {
 
-    if mountedTmp="$(mount | awk '$3 ~ /^\/tmp\// { print $3}')" ; then
+    while IFS= read -r m ; do
+        if mountpoint -q "${m}" ; then
+            umount "${m}" || { sysLog "Failed to unmount ${m}" ; exit 1 ; }
+            rm -Rf "${m}" || { sysLog "Failed to remove temporary directory ${m}" ; exit 1 ; }
+        fi
+    done < <(mount | awk '$3 ~ /^\/tmp\// { print $3 }')
 
-        umount "${mountedTmp}" || { sysLog "Failed to unmount ${mountedTmp}" ; exit 1 ; }
-        rm -Rf /tmp/tmp.* || { sysLog "Failed to remove temporary directory" ; exit 1 ; }
+    test ! -d "${_snapshotsDir}" || rm -Rf "${_snapshotsDir}"
 
-        sysLog "Temporary directory ${_snapshotsDir} removed successfully" ; exit 0
-    else
-        sysLog "No temporary directory mounted" ; exit 0
-    fi
-
+    sysLog "Cleaning up temporary directories"
 }
 
 function mountTmp () {
@@ -42,7 +41,6 @@ function mountTmp () {
 
 }
 
-
 function rootRequired () {
     (( $(id -u) == 0 )) || { sysLog "This script must be run as root" ; exit 1 ; }
 }
@@ -60,7 +58,7 @@ function takeSnapshot () {
 
     snapshotOptions="su snapshot"
 
-    targetDir="$mountedTmp/@${_snapshotsDir}" ; sourceDir="$mountedTmp/@"
+    targetDir="$mountedTmp/${_snapshotsDir}" ; sourceDir="$mountedTmp/@"
 
     # Get the temporary directory that the filesystem is mounted to
     if ! test -d "${_snapshotsDir}" ; then
@@ -129,6 +127,7 @@ function takeSnapshot () {
     cleanUp
 
 }
+
 function deleteSnapshot () {
 
     btrfs su delete "${1}" || { sysLog "Failed to delete snapshot ${1}" ; exit 1 ; }
@@ -140,7 +139,7 @@ function deleteOldestSnapshot () {
 
     local oldSnapshots snapshotList targetDir
 
-    targetDir="${_snapshotsDir}"
+    targetDir="${mountedTmp}/${_snapshotsDir}"
 
     # Delete snapshots exceeding the total to keep
     while true ; do
@@ -165,18 +164,19 @@ function deleteOldestSnapshot () {
 
 function deleteSnapshotList () {
 
-    local snapshotsList snapshotsName targetDir
-
-    shift
-
-    snapshotsList=() ; targetDir="${_snapshotsDir}"
-
     case "${1}" in
         -h|--help                 ) echo "${_deleteHelpInfo}"                 ; exit 0 ;;
     esac
 
     # Check if the script is run with root privileges
-    rootRequired
+    rootRequired ; mountTmp
+
+    local snapshotsList snapshotsName targetDir
+
+    shift
+
+    snapshotsList=() ; targetDir="${mountedTmp}/${_snapshotsDir}"
+    oldest="no" ; confirm="no"
 
     while true ; do case "${1}" in
         -o|--oldest               ) oldest="yes"                              ; shift  ;;
@@ -225,6 +225,8 @@ function deleteSnapshotList () {
 
     test "${oldest}" != "yes" || deleteOldestSnapshot
     test "${oldest}" != "no" || deleteSnapshot "${targetDir}/${selectedSnapshot}"
+
+    cleanUp
 
 }
 
@@ -305,6 +307,32 @@ function restoreSnapshot () {
 
 }
 
+function listSnapshots () {
+
+    rootRequired ; mountTmp
+
+    local listSnapshotsDir
+
+    listSnapshotsDir="${mountedTmp}/${_snapshotsDir}"
+
+        # List all snapshots in the snapshot directory
+    if test -d "$listSnapshotsDir" ; then
+        echo "${_versionInfo}"
+        echo ""
+        echo "Available snapshots in ${_snapshotsDir} subvolume:"
+        echo "--------------------------------------------------"
+        echo ""
+
+        find "${listSnapshotsDir}" -mindepth 1 -maxdepth 1 -type d | sort | while read -r snap ; do
+            basename "${snap}"
+        done
+    else
+        echo "No snapshots found in ${_snapshotsDir}"
+    fi
+
+    cleanUp
+}
+
 set -eo pipefail
 
 # shellcheck disable=SC1091
@@ -312,14 +340,14 @@ source /etc/btrfsnapd.conf || { sysLog "Configuration file /etc/btrfsnapd.conf n
 
 test ! -f /etc/os-release || source /etc/os-release
 
-_appName="btrfs-snapshot"
+_appName="btrfsnapd"
 _appVersion="$(cat /usr/share/doc/btrfsnapd/version || echo "unknown")"
 
 # Default values for general snapshot for the root filesystem
 _distroName="${DISTRO_NAME:-$NAME}"
 _snapshotType="${SNAPSHOT_TYPE:-root}"
 
-_snapshotsDir="${SNAPSHOT_DIR:-snapshots}"
+_snapshotsDir="${SNAPSHOT_DIR:-@snapshots}"
 _setDate="${SET_DATE:-true}"
 _readOnly="${READ_ONLY:-false}"
 
@@ -333,7 +361,7 @@ EOF
 )"
 
 _versionInfo="$(cat << EOF
-${_appName} [ version ${_appVersion} ] - ${_distroName}
+${_appName} [ version ${_appVersion} ] - ${_distroName} ${VERSION}
 EOF
 )"
 
@@ -418,26 +446,13 @@ EOF
 trap "cleanUp" SIGINT
 
 case "${1}" in
-    create                  ) takeSnapshot "${@}"                                      ;;
-    delete                  ) deleteSnapshotList "${@}"                                ;;
-    restore                 ) restoreSnapshot "${@}"                                   ;;
-    list                    )
-        # List all snapshots in the snapshot directory
-        if test -d "${_snapshotsDir}" ; then
-            echo "Available snapshots in ${_snapshotsDir}:"
-            echo ""
-
-            find "${_snapshotsDir}" -mindepth 1 -maxdepth 1 -type d | sort | while read -r snap ; do
-                basename "${snap}"
-            done
-        else
-            echo "No snapshots found in ${_snapshotsDir}"
-        fi
-        exit 0
-    ;;
-    help                    ) echo "${_helpInfo}"                             ; exit 0 ;;
-    version                 ) echo "${_versionInfo}"                          ; exit 0 ;;
-    *                       ) echo "Invalid argument: ${1}"                   ; exit 1 ;;
+    create              ) takeSnapshot "${@}"                    ;;
+    delete              ) deleteSnapshotList "${@}"              ;;
+    restore             ) restoreSnapshot "${@}"                 ;;
+    list                ) listSnapshots                          ;;
+    help                ) echo "${_helpInfo}"           ; exit 0 ;;
+    version             ) echo "${_versionInfo}"        ; exit 0 ;;
+    *                   ) echo "Invalid argument: ${1}" ; exit 1 ;;
 esac
 
 echo "done" ; exit 0
