@@ -3,8 +3,10 @@ Description = Manage btrfs snapshots
 
 [Service]
 Type = oneshot
-ExecStart = /usr/bin/btrfs-snapshot create --source root --yes
-ExecStop = /usr/bin/btrfs-snapshot delete --oldest
+LogLevelMax = notice
+# This service is intended to be run periodically, e.g., via a systemd timer.
+ExecStart = /usr/bin/btrfsnapd create --source root --yes
+ExecStop = /usr/bin/btrfsnapd delete --oldest --yes
 
 [Install]
 WantedBy = multi-user.target
