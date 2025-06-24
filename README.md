@@ -1,9 +1,10 @@
 <div
-  align="center">
+  align="right">
   <img
-    src="image/logo.svg"
+    src="image/btrfsnapd.png"
     alt="BTRFSNAPD Logo"
-    style="display: block; margin: 0 auto;"
+    width="auto"
+    height="360"
   />
 </div>
 
