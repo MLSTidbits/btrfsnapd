@@ -1,7 +1,7 @@
 <div
   align="right">
   <img
-    src="image/btrfsnapd.png"
+    src="image/logo.png"
     alt="BTRFSNAPD Logo"
     width="auto"
     height="360"
