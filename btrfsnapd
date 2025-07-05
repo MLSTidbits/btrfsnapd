@@ -31,13 +31,11 @@ function mount_tmp () {
     test -n "${fsPath}" || { event_log "No btrfs filesystem found" ; exit 1 ; }
 
     mountedTmp="$(mktemp -d /tmp/tmp.XXXXXX)" || {
-        event_log "Failed to create temporary directory" ; exit 1
-    }
+    event_log "Failed to create temporary directory" ; exit 1 ; }
 
     # Mount the btrfs filesystem to the temporary directory
     mount "${fsPath}" "${mountedTmp}" || {
-        event_log "Failed to mount btrfs filesystem ${fsPath} to ${mountedTmp}" ; exit 1
-    }
+    event_log "Failed to mount btrfs filesystem ${fsPath} to ${mountedTmp}" ; exit 1 ; }
 
 }
 
@@ -64,8 +62,7 @@ function take_snapshot () {
     if ! test -d "${_snapshotsDir}" ; then
         event_log "Snapshot directory ${_snapshotsDir} does not exist, creating it"
         mkdir -p "${_snapshotsDir}" || {
-            event_log "Failed to create snapshot directory ${_snapshotsDir}" ; exit 1
-        }
+        event_log "Failed to create snapshot directory ${_snapshotsDir}" ; exit 1 ; }
     fi
 
     while [[ $# -gt 0 ]] ; do case "${1}" in
@@ -95,8 +92,7 @@ function take_snapshot () {
             test -d "${2}" || { event_log "Snapshot target directory ${2} does not exist" ; exit 1 ; }
 
             btrfs property set "${2}" ro false || {
-                event_log "Failed to set writeable property on ${2}" ; exit 1
-            }
+            event_log "Failed to set writeable property on ${2}" ; exit 1 ; }
 
             # Don't want to continue with the snapshot with this flag for now.
             event_log "${2} set to writeable, skipping snapshot creation" ; exit 0
@@ -119,8 +115,7 @@ function take_snapshot () {
 
     # shellcheck disable=SC2086
     btrfs su snapshot ${snapshotOptions} ${sourceDir} ${snapshotOut} || {
-        event_log "Failed to create snapshot of ${sourceDir} in ${targetDir}" ; exit 1
-    }
+    event_log "Failed to create snapshot of ${sourceDir} in ${targetDir}" ; exit 1 ; }
 
     event_log "Snapshot of ${sourceDir} created in ${targetDir}"
 
@@ -150,8 +145,8 @@ function delete_snapshot () {
         -p|--purge                )
             # Check if the target snapshot directory exists
             test -d "${targetDir}/${2}" || {
-                event_log "Snapshot target directory ${targetDir}/${2} does not exist" ; exit 1
-            } ; purgeSnapshot="${targetDir}/${2}"
+            event_log "Snapshot target directory ${targetDir}/${2} does not exist" ; exit 1 ;}
+            purgeSnapshot="${targetDir}/${2}"
 
             shift 2
         ;;
@@ -187,7 +182,8 @@ function delete_snapshot () {
     fi
 
     # Verify that the target directory exists
-    test -d "${targetDir}" || { event_log "Snapshot target directory ${targetDir} does not exist" ; exit 1 ; }
+    test -d "${targetDir}" || {
+    event_log "Snapshot target directory ${targetDir} does not exist" ; exit 1 ; }
 
     local oldSnapshots snapshotList targetDir
 
