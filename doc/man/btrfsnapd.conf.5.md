@@ -1,26 +1,26 @@
 ---
-title: BTRFS-SNAPSHOT-CONFIG
-section: 8
-header: Manual Page
-footer: Management of Btrfs Snapshots
+title: BTRSNAPD.CONFIG
+section: 5
+header: Configuration
+footer: btrfsnapd.conf(5)
 author: Michael Lee Schaecher <michaelleeschaecher@gmail.com>
 version: 1.0
-date: 2025-06-12
+date: 2025-07-5
 ---
 
 # NAME
 
-_btrfs-snapshot_ - Management of Btrfs Snapshots
+_btrfsnapd_ - Management of Btrfs Snapshots
 
 # SYNOPSIS
 
-_btrfs-snapshot_ [create|delete|restore|list|version|help] \<options\> arg...
+_btrfsnapd_ [create|delete|restore|list|version|help] \<options\> arg...
 
 # DESCRIPTION
 
-_btrfs-snapshot_ is a command-line utility for managing Btrfs snapshots. It allows users to create, delete, restore, and list snapshots of Btrfs filesystems. Snapshots are useful for backup and recovery purposes, as they capture the state of the filesystem at a specific point in time.
+_btrfsnapd_ is a command-line utility for managing Btrfs snapshots. It allows users to create, delete, restore, and list snapshots of Btrfs filesystems. Snapshots are useful for backup and recovery purposes, as they capture the state of the filesystem at a specific point in time.
 
-Take the guesswork out of how to create/delete a snapshot or restore from a snapshot. The _btrfs-snapshot_ utility simplifies the process and provides additional options for managing snapshots.
+Take the guesswork out of how to create/delete a snapshot or restore from a snapshot. The _btrfsnapd_ utility simplifies the process and provides additional options for managing snapshots.
 
 - Create a snapshot before changes are made to installed package.
 - Create a new snapshot on schedule.
@@ -29,7 +29,7 @@ Take the guesswork out of how to create/delete a snapshot or restore from a snap
 
 # CONFIGURATION
 
-_btrfs-snapshot_ is configured via the `/etc/btrfs-snapshot.conf` file. This file contains the configuration for the snapshot creation process, including the source and target directories.
+_btrfsnapd_ is configured via the `/etc/btrfsnapd.conf` file. This file contains the configuration for the snapshot creation process, including the source and target directories.
 
 ## SNAPSHOT_DIR
 
@@ -107,14 +107,14 @@ The total number of snapshots to keep. This is used to determine how many snapsh
 
 # FILE
 
-`/etc/btrfs-snapshot.conf`
+`/etc/btrfsnapd.conf`
 
 # SEE ALSO
 
-_btrfs(8)_, _btrfs-snapshot(8)_, _btrfs-subvolume(8)_
+_btrfs(8)_, _btrfsnapd(8)_, _btrfs-subvolume(8)_
 
 # COPYRIGHT
 
-This manual page is part of the _btrfs-snapshot_ project, which is released under the GPU Public License (GPL) version 3 or later. For more information about the license go to <https://www.gnu.org/licenses/gpl-3.0.html>.
+This manual page is part of the _btrfsnapd_ project, which is released under the GPU Public License (GPL) version 3 or later. For more information about the license go to <https://www.gnu.org/licenses/gpl-3.0.html>.
 
 Copyright (C) 2025 Michael Lee Schaecher <michaelleeschaecher@gmail.com>
