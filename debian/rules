@@ -28,10 +28,12 @@ app_name = btrfsnapd
 # Source files
 app = $(CURDIR)/btrfsnapd
 app_conf = $(CURDIR)/btrfsnapd.conf
+apt_conf = $(CURDIR)/50btrfsnapd
 
 # Installation directories
 pkg_dir = $(CURDIR)/debian/$(app_name)
 conf_dir = $(pkg_dir)/etc
+apt_conf_dir = $(conf_dir)/apt/apt.conf.d
 app_bin = $(pkg_dir)/usr/bin
 
 %:
@@ -55,6 +57,7 @@ install: build clean
 
 	install -m 755 $(app) $(app_bin)/
 	install -m 644 $(app_conf) $(conf_dir)/
+	install -m 644 $(apt_conf) $(apt_conf_dir)/
 
 binary-indep: install
 	dh_installdocs
