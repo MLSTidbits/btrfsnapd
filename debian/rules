@@ -1,0 +1,79 @@
+#!/usr/bin/make -f
+
+# See debhelper(7) (uncomment to enable).
+# Output every command that modifies files on the build system.
+#export DH_VERBOSE = 1
+
+
+# See FEATURE AREAS in dpkg-buildflags(1).
+#export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# See ENVIRONMENT in dpkg-buildflags(1).
+# Package maintainers to append CFLAGS.
+#export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
+# Package maintainers to append LDFLAGS.
+#export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
+
+# dh_make generated override targets.
+# This is an example for Cmake (see <https://bugs.debian.org/641051>).
+#override_dh_auto_configure:
+#	dh_auto_configure -- \
+#	-DCMAKE_LIBRARY_PATH=$(DEB_HOST_MULTIARCH)
+
+# what is being installed
+
+# Package variables
+app_name = btrfsnapd
+
+# Source files
+app = $(CURDIR)/btrfsnapd
+app_conf = $(CURDIR)/btrfsnapd.conf
+
+# Installation directories
+pkg_dir = $(CURDIR)/debian/$(app_name)
+conf_dir = $(pkg_dir)/etc
+app_bin = $(pkg_dir)/usr/bin
+
+%:
+	dh $@
+
+build: build-stamp
+
+build-stamp:
+	dh_auto_build
+	touch $@
+
+clean:
+	dh_auto_clean
+	rm -f build-stamp
+
+install: build clean
+	dh_testdir
+	dh_testroot
+	dh_prep
+	dh_installdirs
+
+	install -m 755 $(app) $(app_bin)/
+	install -m 644 $(app_conf) $(conf_dir)/
+
+binary-indep: install
+	dh_installdocs
+	dh_bash-completion
+	dh_installchangelogs
+	dh_installsystemd --restart-after-upgrade
+	dh_installman
+	dh_installmime
+	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary-arch: build install
+
+binary: binary-indep binary-arch
+
+.PHONY: build clean install binary-indep binary-arch binary
