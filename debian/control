@@ -1,15 +1,22 @@
-Package: btrfsnapd
-Version:
-Section: utils
+Source: btrfsnapd
+Section: admin
 Priority: optional
 Maintainer: Michael Schaecher <michaelleeschaecher@gmail.com>
-Installed-Size:
+Rules-Requires-Root: no
+Build-Depends:
+ debhelper-compat (= 13),
+Standards-Version: 4.6.2
 Homepage: https://github.com/MichaelSchaecher/btrfsnapd
-Architecture: amd64
-Depends: btrfs-progs, bash (>= 4.4), grub-btrfsd
-Conflicts: timeshift, btrfs-snapshot
-Build-Depends: debhelper (>= 11), git, dpkg-dev,dpkg-changelog
-Description: Btrfs snapshot daemon
+Vcs-Browser: https://github.com/MichaelSchaecher/btrfsnapd
+Vcs-Git: https://github.com/MichaelSchaecher/btrfsnapd.git
+
+Package: btrfsnapd
+Architecture: any
+Multi-Arch: foreign
+Depends:
+    btrfs-progs, systemd, coreutils, grub-common, grub2-common,
+    grub-btrfsd
+Description:  Btrfs snapshot daemon
  Btrfsnapd is a daemon that manages Btrfs snapshots and integrates with
  GRUB to allow booting into snapshots. It provides a simple command-line
  interface for creating, listing, and deleting snapshots, as well as
