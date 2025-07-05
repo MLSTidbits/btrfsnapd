@@ -7,8 +7,12 @@ function check_installed () { dpkg -s "$1" &>/dev/null ; }
 
 function reset_env () {
     rm -rv debian/.* debian/"$(basename "$(pwd)")" \
-        debian/files \ debian/{changelog,changelog.gz} 2>/dev/null \
-        man/*.gz doc/man/"$(basename "$(pwd)")".{1,conf.5} || true
+        debian/files \
+        debian/{changelog,changelog.gz} 2>/dev/null \
+        debian/*.substvars \
+        debian/*.ex \
+        debian/*.debhelper \
+        doc/man/"$(basename "$(pwd)")".{1,conf.5} || true
 }
 
 function build_deb () {
@@ -110,7 +114,7 @@ function manual_install () {
 function Initialize_build () {
 
     # Manually required system packages
-    _required=( debhelper dh-make git dpkg-changelog pandoc coreutils )
+    _required=( debhelper dh-make git genchangelog pandoc coreutils )
 
     _missing=()
 
