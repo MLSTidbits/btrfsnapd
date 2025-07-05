@@ -1,0 +1,254 @@
+#!/bin/env bash
+
+set -e
+
+# Check if a package is installed
+function check_installed () { dpkg -s "$1" &>/dev/null ; }
+
+function reset_env () {
+    rm -rv debian/.* debian/"$(basename "$(pwd)")" \
+        debian/files \ debian/{changelog,changelog.gz} 2>/dev/null \
+        man/*.gz doc/man/"$(basename "$(pwd)")".{1,conf.5} || true
+}
+
+function build_deb () {
+
+    local _signing
+
+    shift || true
+
+    while true ; do case "$1" in
+        --gpg-id                ) _gpg_id="$2"              ; shift  ;;
+        --no-sign               ) _sign=false                        ;;
+        --*                     ) echo "Unknown option: $1" ; exit 1 ;;
+        *                       )
+            if test -n "$2" ; then shift ; else break ; fi
+        ;;
+    esac ; done
+
+    # shellcheck disable=SC2015
+    if [ -n "$_gpg_id" ] && [ "$_sign" = "false" ] ; then
+        echo "GPG signing ID is required for signing the package!" ; exit 1
+    elif [ -n "$_gpg_id" ] && [ "$_sign" = "true" ] ; then
+        if ! gpg --list-keys | grep "$_gpg_id" | awk '{print $1}' | tr -d '[:space:]' &> /dev/null ; then
+            echo "Invalid GPG ID: $_gpg_id"
+            echo "Please provide a valid GPG key ID."
+            exit 1
+        fi
+        _signing="--sign-keyid=$_gpg_id"
+    elif [ -z "$_gpg_id" ] && [ "$_sign" = "false" ] ; then
+        _signing="--no-sign"
+    fi
+
+    if [ "$_sign" = "false" ] ; then _no_sign="--no-sign" ; else _no_sign="" ; fi
+
+    sleep 0.5 ; dh_genchangelog
+    sleep 0.5 ; dpkg-buildpackage -b "$_signing" --root-command=fakeroot
+
+}
+
+function manual_install () {
+
+    echo "Installing the application..."
+
+    # shellcheck disable=SC1076
+    # shellcheck disable=SC1072
+    source /etc/os-release || { echo "Missing /etc/os-release file." ; exit 1 ; }
+
+    echo -e "Detected OS: \033[1m$NAME\033[0m\n"
+
+    (( "$(id -u)" == 0 )) || { echo "$_rootInstructions" ; exit 1 ; }
+
+    install -vm 644 -D "$_app_conf" "$_etc_dir/"
+    install -vm 644 -D "$_app" "$_app_bin/"
+    install -vm 644 -D "$_app_service" "$_systemd_dir/"
+    install -vm 644 -D "$_app_completion" "$_bash_completion/"
+    install -vm 644 -D "$_copyright" "$_docs/"
+    install -vm 644 -D "$_readme" "$_docs/"
+    install -vm 644 -D "$_coc" "$_docs/"
+    install -vm 644 -D "$_version" "$_docs/"
+
+    if command -v pandoc &>/dev/null ; then
+        for m in man/*.md; do
+            base=$(basename "$m" .md)
+            out="${BUILD_DIR}/usr/share/man/man8/${base}"
+            pandoc "$m" -s -t man -o "$out"
+            gzip -f9 "$out"
+            echo "Installed manpage: $out.gz"
+        done
+    else
+        echo -e "\033[31mPandoc is not installed. Skipping manpage installation.\033[0m"
+    fi
+
+    echo ""
+
+    # enable the service
+    case "$(systemctl is-enabled $_app_name.service)" in
+        enabled|static                  )
+            echo -e "\033[32mService $_app_name is already enabled.\033[0m"
+        ;;
+        disabled|inactive               )
+            echo -e "\033[33mEnabling service $_app_name...\033[0m"
+            systemctl enable --now "$_app_name.service"
+        ;;
+        dead|failed)
+            echo -e "\033[31mService $_app_name is dead or failed.\033[0m"
+            echo -e "Please check the service status with \`systemctl status $_app_name.service\`"
+            exit 1
+        ;;
+        not-found|unknown               )
+            echo -e "\033[31mService $_app_name does not exist.\033[0m"
+            exit 1
+        ;;
+        *                       )
+            echo -e "\033[31mService $_app_name is not enabled.\033[0m"
+        ;;
+    esac
+
+}
+
+function Initialize_build () {
+
+    # Manually required system packages
+    _required=( debhelper dh-make git dpkg-changelog pandoc coreutils )
+
+    _missing=()
+
+    echo -e "Setting up the build environment..\n"
+
+    # Check if the HowToNebie APT repository is available
+    if ! grep -q "howtonebie" /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
+        echo -e "$_missingRepo"
+    else
+        echo -e "\033[32mHowToNebie APT repository is available.\033[0m\n"
+    fi
+    echo -e "🔍 Checking for build requirements\n"
+
+    for pkg in "${_required[@]}"; do
+        if check_installed "$pkg"; then
+            echo -e "$pkg $_pass"
+        else
+            echo -e "$pkg $_fail"
+            _missing+=( "$pkg" )
+        fi
+        sleep 0.33
+    done
+
+    # If _missing is not empty, print a message and exit
+    if [ ${#_missing[@]} -ne 0 ]; then
+        echo -e "\n\n\033[31mThe following packages are missing:\033[0m"
+        for pkg in "${_missing[@]}"; do echo -e "  - $pkg" ; done
+        echo -e "\nPlease install them using your package manager (e.g. \`sudo apt install <package>\`)"
+        exit 1
+    fi
+
+    for m in doc/man/*.md; do \
+		base=$(basename "$m" .md)
+		out="doc/man/${base}"
+		pandoc "$m" -s -t man -o "$out"
+	done
+
+    echo "" ; dpkg-changelog ; echo -e "\n\n\033[32mBuild environment initialized successfully!\033[0m\n"
+
+    echo -e "You can now build the package using \`$0 build\`"
+
+}
+
+set -eo pipefail
+
+_app_name="$(basename "$(pwd)")"
+
+# Directories where the files will be installed
+
+_etc_dir="/etc/default"
+_docs="/usr/share/doc/$_app_name"
+_app_bin="/usr/bin"
+_bash_completion="/usr/share/bash-completion/completions"
+_man="/usr/share/man/man1"
+_systemd_dir="/usr/lib/systemd/system"
+
+# Files to be installed
+_app="$_app_name"
+_app_conf="grub_btrfsd"
+_app_service="$_app_name.service"
+_app_completion="completion/$_app_name"
+_copyright="COPYING"
+_readme="README.md"
+_coc="CODE_OF_CONDUCT.md"
+_version="docs/version"
+_app_man="man/$_app_name.1.md"
+_conf_man="man/$_app_name-conf.1.md"
+
+_gpg_id=""
+_sign=true
+
+_pass="[\033[32m\u2714\033[0m]"
+_fail="[\033[31mx\033[0m]"
+
+_rootInstructions="$(cat <<-EOF
+To install this package, you need to run this script as root.
+EOF
+)"
+
+_helpInfo="$(cat <<-EOF
+Configure script for the Polka-Dots Dark GRUB theme.
+
+Usage: $0 [options] flags ARG..
+
+Options:
+    build           Build the DEB package using dpkg-buildpackage. if no other
+                    options are specified the build may fail.
+
+    --gpg-id        Specify the GPG key ID to sign the package. This option over-
+                    rides the --no-sign option.
+
+    --no-sign       Do not sign the package. This options is overridden by --gpg-id.
+
+    init            Initialize the build environment. The required packages will
+                    be checked and the build environment will be set up. Including
+                    the HowToNebie APT repository and the dpkg-changelog is
+                    installed
+
+    install         Install the application, useful for non Debian/Ubuntu systems.
+                    This option requires root privileges.
+
+    reset           Reset the build environment.
+
+    help            Show this help message and exit.
+
+Build Flags:
+    --gpg-id        Specify the GPG key ID to sign the package. This option over-
+                    rides the --no-sign option.
+    --no-sign       Do not sign the package. This options is overridden by --gpg-id.
+
+Examples:
+    $0 build --gpg-id YOUR_GPG_ID
+    $0 build --no-sign
+EOF
+)"
+
+_missingRepo="$(cat <<-EOF
+\033[31mHowToNebie APT repository is not available.\033[0m
+
+Please add the HowToNebie APT repository to your system.
+You can find instructions here: https://repository.howtonebie.com
+After adding the repository to your system, run:
+
+    \033[1m  sudo apt update\033[0m - Then run this script again."
+EOF
+)"
+
+# shellcheck disable=SC2221
+# shellcheck disable=SC2222
+case "$1" in
+    build                     ) build_deb "$@"                     ;;
+    gpg-id                    ) _gpg_id="$2"              ; shift  ;;
+    no-sign                   ) _sign=false                        ;;
+    init                      ) Initialize_build                   ;;
+    install                   ) manual_install                     ;;
+    reset                     ) reset_env                          ;;
+    help                      ) echo -e "$_helpInfo"               ;;
+    *                         ) echo "Unknown option: $1" ; exit 1 ;;
+esac
+
+exit 0
