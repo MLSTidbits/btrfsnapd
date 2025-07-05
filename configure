@@ -152,9 +152,7 @@ function Initialize_build () {
 		pandoc "$m" -s -t man -o "$out"
 	done
 
-    echo "" ; dpkg-changelog ; echo -e "\n\n\033[32mBuild environment initialized successfully!\033[0m\n"
-
-    echo -e "You can now build the package using \`$0 build\`"
+    echo -e "\nYou can now build the package using \`$0 build\`"
 
 }
 
