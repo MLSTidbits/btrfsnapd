@@ -1,13 +1,23 @@
 .vscode/
 
 build/
+dist/
+
+changelog
 
 *.gz
-*.xz
 *.deb
-*.tar
-out/
-changelog
-version
-md5sums
-*.8
+
+# Ignore the following from the `debian` directory since
+# they are generated during the build process and should
+# not be committed to the repository.
+debian/.debhelper/
+debian/files
+debian/*.ex
+debian/*.debhelper
+debian/*.substvars
+debian/btrfsnapd/
+
+doc/version
+doc/man/btrfsnapd.8
+doc/man/btrfsnapd.conf.5
