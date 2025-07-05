@@ -1,2 +1,7 @@
 # Take a snapshot before installing or removing packages
-DPkg::Pre-Invoke {"/usr/bin/btrfsnapd create --source root --yes"; } ;
+DPkg::Pre-Invoke {
+    "/usr/bin/btrfsnapd create --source root --yes";
+    if [ $? -ne 0 ]; then
+        echo "warning: btrfsnapd failed to create a snapshot before package installation/removal" >&2
+    fi
+};
