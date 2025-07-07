@@ -10,12 +10,14 @@ function event_log () { logger -t btrfs-snapshot "$@" ; }
 
 function clean_up () {
 
-    while IFS= read -r m ; do
-        if mountpoint -q "${m}" ; then
-            umount "${m}" || { event_log "Failed to unmount ${m}" ; exit 1 ; }
-            rm -Rf "${m}" || { event_log "Failed to remove temporary directory ${m}" ; exit 1 ; }
+    mount | awk '$3 ~ /^\/tmp\// { print $3 }' | while read -r tmpDir ; do
+        if mountpoint -q "${tmpDir}" ; then
+            umount "${tmpDir}" || {
+            event_log "Failed to unmount temporary directory ${tmpDir}" ; exit 1 ; }
         fi
-    done < <(mount | awk '$3 ~ /^\/tmp\// { print $3 }')
+        rm -Rf "${tmpDir}" || {
+        event_log "Failed to remove temporary directory ${tmpDir}" ; exit 1 ; }
+    done
 
     test ! -d "${_snapshotsDir}" || rm -Rf "${_snapshotsDir}"
 
