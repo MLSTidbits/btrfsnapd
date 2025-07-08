@@ -61,8 +61,6 @@ function clean_up () {
         event_log "error" "Failed to remove temporary directory $_tmpDir" ; exit 1 ; }
     done
 
-    test ! -d "$_snapshotsDir" || rm -Rf "$_snapshotsDir"
-
     event_log "info" "Cleaning up temporary directories"
 }
 
@@ -75,7 +73,7 @@ function take_snapshot () {
     # Check if the script is run with root privileges
     check_root
 
-    local _snapshotOptions _confirm _sourceDir _targetDir snapshotOut
+    local _snapshotOptions _confirm _sourceDir _targetDir _snapshotOut
 
     _snapshotOptions=""
 
@@ -87,7 +85,7 @@ function take_snapshot () {
      [[ "$1" == "-h" || "$1" == "--help" ]] && { echo "$_createHelpInfo" ; exit 0 ; }
 
     if ! test -d "/$_snapshotsDir" ; then
-        event_log "warning" "Snapshot subvolume $_snapshotsDir does not exist, creating it"
+        event_log "warning" "Snapshot subvolume /$_snapshotsDir does not exist, creating it"
         # Check if there is a subvolume for snapshots or snapshot, if not create it
         if ! btrfs subvolume list / | grep -q "@snapshots" ; then
             btrfs subvolume create "/$_snapshotsDir" || {
@@ -135,18 +133,18 @@ function take_snapshot () {
     test -d "$_targetDir" ||
     { event_log "error" "Snapshot target directory $_targetDir does not exist" ; exit 1 ; }
 
-    snapshotOut="$_targetDir/${_distroName}_${_snapshotType}_$(date +%Y%m%d+%H%M)"
+    _snapshotOut="$_targetDir/${_distroName}_${_snapshotType}_$(date +%Y%m%d+%H%M)"
 
     if test "$_confirm" != "yes" ; then
 
         # Prompt for _confirmation before creating the snapshot
-        read -rp "Are you sure you want to create a snapshot of ${_sourceDir} in ${snapshotOut}? [y/N] " choice
+        read -rp "Are you sure you want to create a snapshot of ${_sourceDir} in ${_snapshotOut}? [y/N] " choice
         [[ "$choice" =~ ^[yY](es)?$ ]] || { echo "Snapshot creation cancelled" ; exit 0 ; }
 
     fi
 
     # shellcheck disable=SC2086
-    btrfs su snapshot ${_snapshotOptions} ${_sourceDir} ${snapshotOut} || {
+    btrfs su snapshot ${_snapshotOptions} ${_sourceDir} ${_snapshotOut} || {
     event_log "error" "Failed to create snapshot of ${_sourceDir} in $_targetDir" ; exit 1 ; }
 
     event_log "info" "Snapshot of ${_sourceDir} created in $_targetDir"
@@ -156,6 +154,8 @@ function take_snapshot () {
 }
 
 function run_cycle_delete () {
+
+    event_log "info" "Automatically deleting oldest snapshots in $_targetDir"
 
     while true ; do
 
@@ -171,12 +171,12 @@ function run_cycle_delete () {
             btrfs su delete "$_targetDir/${_oldSnapshots}" ||
             { event_log "error" "Failed deleting snapshot $_targetDir/${_oldSnapshots}" ; exit 1 ; }
         else
+            event_log "info" "No snapshots to delete, keeping ${_totalCount} snapshots in $_targetDir"
             break
         fi
 
     done
 
-    event_log "info" "Oldest snapshot ${_oldSnapshots} deleted from $_targetDir"
 }
 
 function delete_snapshot () {
@@ -274,7 +274,7 @@ function restore_snapshot () {
 
     shift
 
-    local _tmpDir _fsPath _snapshotsList _targetDir _sourceDir
+    local _fsPath _snapshotsList _targetDir _sourceDir
     local _selectedSnapshot _snapshotsName _confirm
 
     _confirm="no"
