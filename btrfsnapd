@@ -1,31 +1,73 @@
 #!/bin/env bash
 
-# btrfsnapd copyright (c) 2024 by <mschaecher78@gmail.com> Michael L. Schaecher - MIT License
+# btrfsnapd - A BTRFS snapshot management script
+# Copyright (c) 2024 by Michael Schaecher <MichaelLeeSchaecher@gmail.com>
 
-# This script creates a btrfs snapshot of the root filesystem and deletes old snapshots helping
-# keep data usage manageable.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# shellcheck disable=SC2317
+function sign_handler () {
+
+    local _signal
+
+    _signal="${1:-SIGINT}"
+
+    case "${_signal}" in
+        SIGINT|SIGTERM|SIGQUIT )
+            event_log "warning" "Received signal ${_signal}, cleaning up and exiting" ;;
+        EXIT                   ) event_log "info" "Exiting script" ; exit 0           ;;
+        *                      )
+            event_log "error" "Unknown signal ${_signal} received, exiting" ; exit 1
+        ;;
+    esac
+
+    clean_up
+}
 
 # Log all output to event_log
-function event_log () { logger -t btrfsnapd "$@" ; }
+function event_log () {
+
+    local _eventType _eventMessage
+
+    _eventType="${1:-info}"
+    _eventMessage="${2}"
+
+    case "${_eventType}" in
+        info|warning|error      ) logger -t btrfsnapd -p user."${_eventType}" "${_eventMessage}" ;;
+        *                       ) logger -t btrfsnapd -p user.info "${_eventMessage}"            ;;
+    esac
+
+}
 
 function clean_up () {
 
     mount | awk '$3 ~ /^\/tmp\// { print $3 }' | while read -r _tmpDir ; do
         if mountpoint -q "$_tmpDir" ; then
             umount "$_tmpDir" || {
-            event_log "Failed to unmount temporary directory $_tmpDir" ; exit 1 ; }
+            event_log "error" "Failed to unmount temporary directory $_tmpDir" ; exit 1 ; }
         fi
         rm -Rf "$_tmpDir" || {
-        event_log "Failed to remove temporary directory $_tmpDir" ; exit 1 ; }
+        event_log "error" "Failed to remove temporary directory $_tmpDir" ; exit 1 ; }
     done
 
     test ! -d "$_snapshotsDir" || rm -Rf "$_snapshotsDir"
 
-    event_log "Cleaning up temporary directories"
+    event_log "info" "Cleaning up temporary directories"
 }
 
 function check_root () {
-    (( $(id -u) == 0 )) || { event_log "This script must be run as root" ; exit 1 ; }
+    (( $(id -u) == 0 )) || { echo "This script must be run as root" ; exit 1 ; }
 }
 
 function take_snapshot () {
@@ -45,12 +87,13 @@ function take_snapshot () {
      [[ "$1" == "-h" || "$1" == "--help" ]] && { echo "$_createHelpInfo" ; exit 0 ; }
 
     if ! test -d "/$_snapshotsDir" ; then
-        event_log "Snapshot directory $_snapshotsDir does not exist, creating it"
+        event_log "warning" "Snapshot subvolume $_snapshotsDir does not exist, creating it"
         # Check if there is a subvolume for snapshots or snapshot, if not create it
         if ! btrfs subvolume list / | grep -q "@snapshots" ; then
             btrfs subvolume create "/$_snapshotsDir" || {
-            event_log "Failed to create snapshot directory $_snapshotsDir" ; exit 1 ; }
+            event_log "error" "Failed to create snapshot subvolume $_snapshotsDir" ; exit 1 ; }
         fi
+        event_log "info" "Created snapshot subvolume $_snapshotsDir"
     fi
 
     while [[ $# -gt 0 ]] ; do case "${1}" in
@@ -77,19 +120,20 @@ function take_snapshot () {
         ;;
         -w|--writeable              )
             # Verify that the target directory exists
-            test -d "${2}" || { event_log "Snapshot target directory ${2} does not exist" ; exit 1 ; }
+            test -d "${2}" || { event_log "error" "Snapshot target directory ${2} does not exist" ; exit 1 ; }
 
             btrfs property set "${2}" ro false || {
-            event_log "Failed to set writeable property on ${2}" ; exit 1 ; }
+            event_log "error" "Failed to set writeable property on ${2}" ; exit 1 ; }
 
             # Don't want to continue with the snapshot with this flag for now.
-            event_log "${2} set to writeable, skipping snapshot creation" ; exit 0
+            event_log "error" "${2} set to writeable, skipping snapshot creation" ; exit 0
         ;;
         *) break ;;
     esac ; done
 
     # Verify that the target directory exists
-    test -d "$_targetDir" || { event_log "Snapshot target directory $_targetDir does not exist" ; exit 1 ; }
+    test -d "$_targetDir" ||
+    { event_log "error" "Snapshot target directory $_targetDir does not exist" ; exit 1 ; }
 
     snapshotOut="$_targetDir/${_distroName}_${_snapshotType}_$(date +%Y%m%d+%H%M)"
 
@@ -97,15 +141,15 @@ function take_snapshot () {
 
         # Prompt for _confirmation before creating the snapshot
         read -rp "Are you sure you want to create a snapshot of ${_sourceDir} in ${snapshotOut}? [y/N] " choice
-        [[ "$choice" =~ ^[yY](es)?$ ]] || { event_log "Snapshot creation cancelled" ; exit 0 ; }
+        [[ "$choice" =~ ^[yY](es)?$ ]] || { echo "Snapshot creation cancelled" ; exit 0 ; }
 
     fi
 
     # shellcheck disable=SC2086
     btrfs su snapshot ${_snapshotOptions} ${_sourceDir} ${snapshotOut} || {
-    event_log "Failed to create snapshot of ${_sourceDir} in $_targetDir" ; exit 1 ; }
+    event_log "error" "Failed to create snapshot of ${_sourceDir} in $_targetDir" ; exit 1 ; }
 
-    event_log "Snapshot of ${_sourceDir} created in $_targetDir"
+    event_log "info" "Snapshot of ${_sourceDir} created in $_targetDir"
 
     clean_up
 
@@ -124,18 +168,20 @@ function run_cycle_delete () {
         _snapshotList="$(find "$_targetDir" -maxdepth 1 -type d | wc -l)"
 
         if test "${_snapshotList}" -gt "${count}" ; then
-            btrfs su delete "$_targetDir/${_oldSnapshots}"
-            test "${oldest}" != "" || break
+            btrfs su delete "$_targetDir/${_oldSnapshots}" ||
+            { event_log "error" "Failed deleting snapshot $_targetDir/${_oldSnapshots}" ; exit 1 ; }
         else
             break
         fi
 
     done
+
+    event_log "info" "Oldest snapshot ${_oldSnapshots} deleted from $_targetDir"
 }
 
 function delete_snapshot () {
 
-    local _snapshotsList _snapshotsName _targetDir _oldSnapshots _snapshotList
+    local _snapshotsList _snapshotsName _oldSnapshots _snapshotList
 
     _snapshotsList=()
     _targetDir="/$_snapshotsDir"
@@ -156,7 +202,7 @@ function delete_snapshot () {
         -y|--yes                ) _confirm="yes"                 ; shift ;;
         -p|--purge              )
             [ -n "$2" ] || test -d "$_targetDir/${2}" ||
-            { event_log "Purge snapshot directory/name is not valid: ${2}" ; exit 1 ; }
+            { event_log "error" "Purge snapshot directory/name is not valid: ${2}" ; exit 1 ; }
             _purgeSnapshot="$_targetDir/${2}"
             shift 2
         ;;
@@ -193,7 +239,7 @@ function delete_snapshot () {
         esac
     elif [ -n "$_selectedSnapshot" ] && [ "$_confirm" = "yes" ] ; then
         btrfs su delete "$_targetDir/${_selectedSnapshot}" || {
-        event_log "Failed to delete snapshot ${_selectedSnapshot} in $_targetDir" ; exit 1 ; }
+        event_log "error" "Failed to delete snapshot ${_selectedSnapshot} in $_targetDir" ; exit 1 ; }
     fi
 
     # Delete snapshots exceeding the total to keep
@@ -210,7 +256,7 @@ function delete_snapshot () {
 
     if [ -n "$_purgeSnapshot" ] && [ "$_confirm" = "yes" ] ; then
         btrfs su delete "${_purgeSnapshot}" || {
-        event_log "Failed to delete snapshot ${_purgeSnapshot}" ; exit 1 ; }
+        event_log "error" "Failed to delete snapshot ${_purgeSnapshot}" ; exit 1 ; }
     elif [ -n "$_purgeSnapshot" ] && [ "$_confirm" = "no" ] ; then
         read -rp "Purge snapshot $_purgeSnapshot? [y/N] " choice
         case "${choice}" in
@@ -243,11 +289,13 @@ function restore_snapshot () {
     # Get the dev path of the btrfs filesystem
     _fsPath="$(lsblk -o fstype,path | awk '$1 == "btrfs" {print $2}')"
 
-    mount "$_fsPath" "$_tmpDir" || { event_log "Failed to mount btrfs filesystem $_fsPath" ; exit 1 ; }
+    mount "$_fsPath" "$_tmpDir" || { event_log "error" "Failed to mount btrfs filesystem $_fsPath" ; exit 1 ; }
 
     _snapshotsDir="$_tmpDir/@snapshots"
     _sourceDir="$_tmpDir/@"
 
+    # shellcheck disable=SC2222
+    # shellcheck disable=SC2221
     while [ $# -gt 0 ] ; do case "$1" in
         -l|--list               )
             _snapshotsList=()
@@ -257,7 +305,7 @@ function restore_snapshot () {
             done < <(find "$_targetDir" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
 
             if [ ${#_snapshotsList[@]} -eq 0 ]; then
-                event_log "No snapshots found in $_targetDir" ; exit 1
+                event_log "error" "No snapshots found in $_targetDir" ; exit 1
             fi
 
             echo "Please select a snapshot to restore from: (ctrl+c to cancel)"
@@ -301,20 +349,20 @@ function restore_snapshot () {
         read -rp "Are you sure you want to restore ${_sourceDir} from $_selectedSnapshot? [y/N] " _choice
         case "$_choice" in
             [yY][eE][sS]|[yY]) ;;
-            [nN][oO]|[nN]) event_log "Snapshot restoration cancelled" ; exit 0 ;;
+            [nN][oO]|[nN]) echo "Snapshot restoration cancelled" ; exit 0 ;;
             *) echo "Invalid choice, please enter 'y' or 'n'" ; exit 1 ;;
         esac
     fi
 
     if btrfs su delete "${_sourceDir}" && \
        btrfs su snapshot "$_snapshotsDir/$_selectedSnapshot" "${_sourceDir}"; then
-        event_log "Snapshot $_selectedSnapshot restored to ${_sourceDir}"
+        event_log "info" "Snapshot $_selectedSnapshot restored to ${_sourceDir}"
     else
-        event_log "Failed to restore snapshot $_selectedSnapshot to ${_sourceDir}" ; exit 1
+        event_log "error" "Failed to restore snapshot $_selectedSnapshot to ${_sourceDir}" ; exit 1
     fi
 
     umount "$_tmpDir" || {
-        event_log "Failed to unmount temporary directory $_tmpDir" ; exit 1 ;
+        event_log "error" "Failed to unmount temporary directory $_tmpDir" ; exit 1 ;
     }
 
     clean_up
@@ -374,7 +422,8 @@ _readOnly="${READ_ONLY:-false}"
 # How many snapshots to keep. This should be keep low to avoid using too much disk space.
 _totalCount="${TOTAL_COUNT:-7}"
 
-# trap "clean_up"
+# Trap errors and log them
+trap sign_handler SIGINT SIGTERM SIGQUIT EXIT
 
 _licenseInfo="$(cat << EOF
 $_appName - Copyright (c) 2024 by Michael L. Schaecher <MichaelLeeSchaecher@gmail.com> under the terms
