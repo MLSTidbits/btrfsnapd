@@ -347,7 +347,7 @@ function list_snapshots () {
 set -eo pipefail
 
 # shellcheck disable=SC1091
-source ./btrfsnapd.conf 2> /dev/null || {
+source /etc/btrfsnapd.conf 2> /dev/null || {
     echo "Failed to source configuration file /etc/btrfsnapd.conf" >&2
     exit 1
 }
@@ -374,7 +374,7 @@ _readOnly="${READ_ONLY:-false}"
 # How many snapshots to keep. This should be keep low to avoid using too much disk space.
 _totalCount="${TOTAL_COUNT:-7}"
 
-trap "clean_up"
+# trap "clean_up"
 
 _licenseInfo="$(cat << EOF
 $_appName - Copyright (c) 2024 by Michael L. Schaecher <MichaelLeeSchaecher@gmail.com> under the terms
