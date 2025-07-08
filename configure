@@ -39,7 +39,7 @@ function build_deb () {
             echo "Please provide a valid GPG key ID."
             exit 1
         fi
-        _signing="--sign-keyid=$_gpg_id"
+        _signing="--sign-key=$_gpg_id"
     elif [ -z "$_gpg_id" ] && [ "$_sign" = "false" ] ; then
         _signing="--no-sign"
     fi
