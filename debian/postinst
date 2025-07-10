@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+	configure|reinstall|upgrade						)
+		case "$(systemctl is-active btrfsnapd.timer)" in
+			active   								)
+				systemctl daemon-reload && systemctl restart btrfsnapd.timer
+			;;
+			inactive 								)
+				systemctl enable --now btrfsnapd.timer && systemctl enable btrfsnapd.service
+				;;
+			dead|failed								) systemctl start btrfsnapd.timer        ;;
+			*										)
+				echo "Unknown state of btrfsnapd.timer: $(systemctl is-active btrfsnapd.timer)"
+				exit 1
+			;;
+		esac
+	;;
+	abort-upgrade|abort-deconfigure|abort-remove	) ;;
+	*												) echo "Unsupported action: $1" ; exit 1 ;;
+esac
+
+exit 0

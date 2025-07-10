@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+	remove|purge				) systemctl daemon-reload >/dev/null || true ;;
+	*							) echo "Unsupported action: $1" 	; exit 1 ;;
+esac
+
