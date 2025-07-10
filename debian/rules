@@ -26,9 +26,9 @@
 app_name = btrfsnapd
 
 # Source files
-app = $(CURDIR)/btrfsnapd
-app_conf = $(CURDIR)/btrfsnapd.conf
-apt_conf = $(CURDIR)/50btrfsnapd
+app = $(CURDIR)/src/$(app_name)
+app_conf = $(CURDIR)/src/conf/$(app_name).conf
+apt_conf = $(CURDIR)/src/conf/50btrfsnapd
 
 # Installation directories
 pkg_dir = $(CURDIR)/debian/$(app_name)
