@@ -63,7 +63,7 @@ binary-indep: install
 	dh_installdocs
 	dh_bash-completion
 	dh_installchangelogs
-	dh_installsystemd --restart-after-upgrade
+	dh_installsystemd
 	dh_installman
 	dh_installmime
 	dh_link
