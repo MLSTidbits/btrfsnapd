@@ -19,5 +19,5 @@ debian/*.substvars
 debian/btrfsnapd/
 
 doc/version
-doc/man/btrfsnapd.8
-doc/man/btrfsnapd.conf.5
+man/btrfsnapd.8
+man/btrfsnapd.conf.5

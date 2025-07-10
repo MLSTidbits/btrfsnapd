@@ -154,9 +154,9 @@ function Initialize_build () {
         exit 1
     fi
 
-    for m in doc/man/*.md; do \
+    for m in man/*.md; do \
 		base=$(basename "$m" .md)
-		out="doc/man/${base}"
+		out="man/${base}"
 		pandoc "$m" -s -t man -o "$out"
 	done
 
