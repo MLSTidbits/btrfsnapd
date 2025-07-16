@@ -223,7 +223,7 @@ EOF
 )"
 
 _helpInfo="$(cat <<-EOF
-Configure script for the Polka-Dots Dark GRUB theme.
+Configure script for $_app_name - A Btrfs snapshot management tool.
 
 Usage: $0 [options] flags ARG..
 
