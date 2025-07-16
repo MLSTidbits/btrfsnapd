@@ -115,7 +115,9 @@ function build_deb () {
 
 
     for arch in "${_target_arch[@]}"; do
-        dpkg-buildpackage ${_root} ${_no_sign} ${_sign_key} --target-arch "$arch" --build="${_type:-binary}"
+        # shellcheck disable=SC2086
+        dpkg-buildpackage ${_root} ${_no_sign} ${_sign_key} --target-arch "$arch" --build=${_type:-binary}
+        # shellcheck disable=SC2181
         if [ $? -ne 0 ]; then
             echo -e "$_fail Failed to build package for architecture: $arch"
             exit 1
@@ -161,6 +163,7 @@ function manual_install () {
     echo ""
 
     # enable the service
+    # shellcheck disable=SC2086
     case "$(systemctl is-enabled $_app_name.service)" in
         enabled|static                  )
             echo -e "\033[32mService $_app_name is already enabled.\033[0m"
@@ -200,7 +203,7 @@ _systemd_dir="/usr/lib/systemd/system"
 
 # Files to be installed
 _app="$_app_name"
-_app_conf="grub_btrfsd"
+_app_conf="$_app_name.conf"
 _app_service="$_app_name.service"
 _app_completion="completion/$_app_name"
 _copyright="COPYING"
@@ -208,7 +211,7 @@ _readme="README.md"
 _coc="CODE_OF_CONDUCT.md"
 _version="docs/version"
 _app_man="man/$_app_name.1.md"
-_conf_man="man/$_app_name-conf.1.md"
+_conf_man="man/$_app_name.conf.5.md"
 
 _gpg_id=""
 _sign=true
