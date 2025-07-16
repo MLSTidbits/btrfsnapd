@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 
 # btrfsnapd - A BTRFS snapshot management script
 # Copyright (c) 2024 by Michael Schaecher <MichaelLeeSchaecher@gmail.com>
