@@ -64,6 +64,7 @@ binary-indep: install
 	dh_bash-completion
 	dh_installchangelogs
 	dh_installsystemd
+	dh_lintian
 	dh_installman
 	dh_installmime
 	dh_link
@@ -74,7 +75,6 @@ binary-indep: install
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb
-	dh_lintian
 
 binary-arch: build install
 

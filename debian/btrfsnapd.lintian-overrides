@@ -1,0 +1,2 @@
+# Lintian overrides for btrfsnapd
+btrfsnapd: maintainer-script-calls-systemctl
