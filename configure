@@ -231,16 +231,6 @@ Options:
     build           Build the DEB package using dpkg-buildpackage. if no other
                     options are specified the build may fail.
 
-    --gpg-id        Specify the GPG key ID to sign the package. This option over-
-                    rides the --no-sign option.
-
-    --no-sign       Do not sign the package. This options is overridden by --gpg-id.
-
-    init            Initialize the build environment. The required packages will
-                    be checked and the build environment will be set up. Including
-                    the HowToNebie APT repository and the dpkg-changelog is
-                    installed
-
     install         Install the application, useful for non Debian/Ubuntu systems.
                     This option requires root privileges.
 
@@ -249,13 +239,23 @@ Options:
     help            Show this help message and exit.
 
 Build Flags:
-    --gpg-id        Specify the GPG key ID to sign the package. This option over-
-                    rides the --no-sign option.
-    --no-sign       Do not sign the package. This options is overridden by --gpg-id.
+    --build-type TYPE
+                    Specify the build type. Valid values are: binary, source, full.
+                    Default is binary.
+
+    --sign-key GPG_ID
+                    Specify the GPG key ID to sign the package. If not specified,
+                    the package will not be signed.
+
+    --no-sign       Do not sign the package. Overrides --sign-key.
+
+    --root-command COMMAND
+                    Specify the command to run as root. Valid values are: fakeroot,
+                    sudo, super, really. Default is fakeroot.
 
 Examples:
-    $0 build --gpg-id YOUR_GPG_ID
-    $0 build --no-sign
+    $0 build --build-type binary
+    $0 build --no-sign --root-command sudo
 EOF
 )"
 
@@ -274,7 +274,6 @@ EOF
 # shellcheck disable=SC2222
 case "$1" in
     build                     ) build_deb "$@"                     ;;
-    init                      ) Initialize_build                   ;;
     install                   ) manual_install                     ;;
     reset                     ) reset_env                          ;;
     help                      ) echo -e "$_helpInfo"               ;;
