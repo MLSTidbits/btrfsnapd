@@ -74,6 +74,7 @@ binary-indep: install
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb
+	dh_lintian
 
 binary-arch: build install
 
