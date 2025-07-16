@@ -1,9 +1,6 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 
-set -e
-
-# Check if a package is installed
-function check_installed () { dpkg -s "$1" &>/dev/null ; }
+set -eo pipefail
 
 function reset_env () {
 
@@ -15,6 +12,7 @@ function reset_env () {
         debian/*.debhelper \
         doc/man/"$(basename "$(pwd)")".{1,5,8} || true
 
+        # shellcheck disable=SC2181
         if [ "$?" -eq 0 ] ; then
             echo -e "\033[32mEnvironment reset successfully.\033[0m"
         else
@@ -25,37 +23,106 @@ function reset_env () {
 
 function build_deb () {
 
-    local _signing
+    local _arch _no_sign _key _root_command
 
-    shift || true
+    _sign_key=
+    _no_sign=""
+    _target_arch=( "$(dpkg --print-architecture)" )
+    _root_command=fakeroot
+    _arches=()
 
-    while true ; do case "$1" in
-        --gpg-id                ) _gpg_id="$2"              ; shift  ;;
-        --no-sign               ) _sign=false                        ;;
-        --*                     ) echo "Unknown option: $1" ; exit 1 ;;
-        *                       )
-            if test -n "$2" ; then shift ; else break ; fi
-        ;;
-    esac ; done
+    # Manually required system packages
+    _required=( debhelper dh-make git genchangelog pandoc coreutils )
+    _missing=()
 
-    # shellcheck disable=SC2015
-    if [ -n "$_gpg_id" ] && [ "$_sign" = "false" ] ; then
-        echo "GPG signing ID is required for signing the package!" ; exit 1
-    elif [ -n "$_gpg_id" ] && [ "$_sign" = "true" ] ; then
-        if ! gpg --list-keys | grep "$_gpg_id" | awk '{print $1}' | tr -d '[:space:]' &> /dev/null ; then
-            echo "Invalid GPG ID: $_gpg_id"
-            echo "Please provide a valid GPG key ID."
-            exit 1
-        fi
-        _signing="--sign-key=$_gpg_id"
-    elif [ -z "$_gpg_id" ] && [ "$_sign" = "false" ] ; then
-        _signing="--no-sign"
+    shift
+
+    while [ $# -gt 0 ] ; do case "$1" in
+            --build-type            )
+                case "$2" in
+                    binary|source|full )
+                        _type="$2" ; shift ;;
+                    *                  )
+                        echo "Invalid build type: $2" ; exit 1
+                ;;
+                esac
+            ;;
+            --sign-key              ) _key="$2" ; shift ;;
+            --no-sign               ) _no_sign="--no-sign" ;;
+            --root-command          )
+                case "$2" in
+                    fakeroot|sudo|super|really )
+                        _root="--root-command=$_root_command" ;;
+                    *                          )
+                        echo "Invalid root command: $2" ; exit 1
+                    ;;
+                esac
+            ;;
+            --*                     ) echo "Unknown option: $1" ; exit 1 ;;
+        esac ; shift ; done
+
+    # If no --target-arch was provided, use the default architecture
+    if [ -n "$_no_sign" ] && [ -n "$_key" ] ; then
+        echo "$_waring The --sign-key option is ignored because --no-sign is set."
+        _sign_key=""
     fi
 
-    if [ "$_sign" = "false" ] ; then _no_sign="--no-sign" ; else _no_sign="" ; fi
+    if [ -n "$_key" ] ; then
+        if ! gpg --list-keys "$_key" &>/dev/null ; then
+            echo "$_fail GPG key $_key not found."
+            exit 1
+        fi
+        _sign_key="--sign-key=$_key"
+    fi
 
-    sleep 0.5 ; dh_genchangelog
-    sleep 0.5 ; dpkg-buildpackage -b "$_signing" --root-command=fakeroot
+    if [ ! -d "debian" ] ; then
+        echo "The debian directory is missing. Please run \`dh_make\` first."
+        exit 1
+    fi
+
+    # Check if the HowToNebie APT repository is available
+    if ! grep -qr "howtonebie" /etc/apt/ 2>/dev/null; then
+        echo -e "$_missingRepo"
+    else
+        echo -e "configure: Detected HowToNebie APT repository."
+    fi
+
+    for pkg in "${_required[@]}"; do
+        if dpkg -s "$1" &>/dev/null "$pkg"; then
+            echo -e "configure: checking for $pkg $_pass"
+        else
+            echo -e "$pkg $_fail"
+            _missing+=( "$pkg" )
+        fi
+    done
+
+    # If _missing is not empty, print a message and exit
+    if [ ${#_missing[@]} -ne 0 ]; then
+        echo -e "configure: The following packages are missing:\n"
+        for pkg in "${_missing[@]}"; do echo -e "  - $pkg" ; done
+        echo -e "\nPlease install them using your package manager (e.g. \`sudo apt install <package>\`)"
+        exit 1
+    fi
+
+   dh_genchangelog
+
+    if [ "$_type" = "source" ] || [ "$_type" = "full" ] ; then
+        # Compress the source package into a tarball
+        _version=$(cat doc/version)
+        cd ../ ; tar -czf "${_app_name}_$_version.orig.tar.gz" "$_app_name"
+        cd "$_app_name"
+    fi
+
+
+    for arch in "${_target_arch[@]}"; do
+        dpkg-buildpackage ${_root} ${_no_sign} ${_sign_key} --target-arch "$arch" --build="${_type:-binary}"
+        if [ $? -ne 0 ]; then
+            echo -e "$_fail Failed to build package for architecture: $arch"
+            exit 1
+        else
+            echo -e "$_pass Successfully built package for architecture: $arch"
+        fi
+    done
 
 }
 
@@ -63,8 +130,7 @@ function manual_install () {
 
     echo "Installing the application..."
 
-    # shellcheck disable=SC1076
-    # shellcheck disable=SC1072
+    # shellcheck disable=SC1091
     source /etc/os-release || { echo "Missing /etc/os-release file." ; exit 1 ; }
 
     echo -e "Detected OS: \033[1m$NAME\033[0m\n"
@@ -112,55 +178,10 @@ function manual_install () {
             echo -e "\033[31mService $_app_name does not exist.\033[0m"
             exit 1
         ;;
-        *                       )
+        *                               )
             echo -e "\033[31mService $_app_name is not enabled.\033[0m"
         ;;
     esac
-
-}
-
-function Initialize_build () {
-
-    # Manually required system packages
-    _required=( debhelper dh-make git genchangelog pandoc coreutils )
-
-    _missing=()
-
-    echo -e "Setting up the build environment..\n"
-
-    # Check if the HowToNebie APT repository is available
-    if ! grep -q "howtonebie" /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
-        echo -e "$_missingRepo"
-    else
-        echo -e "\033[32mHowToNebie APT repository is available.\033[0m\n"
-    fi
-    echo -e "🔍 Checking for build requirements\n"
-
-    for pkg in "${_required[@]}"; do
-        if check_installed "$pkg"; then
-            echo -e "$pkg $_pass"
-        else
-            echo -e "$pkg $_fail"
-            _missing+=( "$pkg" )
-        fi
-        sleep 0.33
-    done
-
-    # If _missing is not empty, print a message and exit
-    if [ ${#_missing[@]} -ne 0 ]; then
-        echo -e "\n\n\033[31mThe following packages are missing:\033[0m"
-        for pkg in "${_missing[@]}"; do echo -e "  - $pkg" ; done
-        echo -e "\nPlease install them using your package manager (e.g. \`sudo apt install <package>\`)"
-        exit 1
-    fi
-
-    for m in man/*.md; do \
-		base=$(basename "$m" .md)
-		out="man/${base}"
-		pandoc "$m" -s -t man -o "$out"
-	done
-
-    echo -e "\nYou can now build the package using \`$0 build\`"
 
 }
 
@@ -194,6 +215,7 @@ _sign=true
 
 _pass="[\033[32m\u2714\033[0m]"
 _fail="[\033[31mx\033[0m]"
+_waring="[\033[33m!\033[0m]"
 
 _rootInstructions="$(cat <<-EOF
 To install this package, you need to run this script as root.
@@ -238,13 +260,13 @@ EOF
 )"
 
 _missingRepo="$(cat <<-EOF
-\033[31mHowToNebie APT repository is not available.\033[0m
+HowToNebie APT repository is not available on your system.
 
 Please add the HowToNebie APT repository to your system.
 You can find instructions here: https://repository.howtonebie.com
 After adding the repository to your system, run:
 
-    \033[1m  sudo apt update\033[0m - Then run this script again."
+    sudo apt update\033[0m - Then run this script again."
 EOF
 )"
 
@@ -252,8 +274,6 @@ EOF
 # shellcheck disable=SC2222
 case "$1" in
     build                     ) build_deb "$@"                     ;;
-    gpg-id                    ) _gpg_id="$2"              ; shift  ;;
-    no-sign                   ) _sign=false                        ;;
     init                      ) Initialize_build                   ;;
     install                   ) manual_install                     ;;
     reset                     ) reset_env                          ;;
