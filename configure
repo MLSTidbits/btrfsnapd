@@ -157,7 +157,7 @@ function manual_install () {
             echo "Installed manpage: $out.gz"
         done
     else
-        echo -e "\033[31mPandoc is not installed. Skipping manpage installation.\033[0m"
+        echo -e "configure: pandoc is not installed. Skipping manpage generation."
     fi
 
     echo ""
