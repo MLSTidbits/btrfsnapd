@@ -88,10 +88,10 @@ function build_deb () {
     fi
 
     for pkg in "${_required[@]}"; do
-        if dpkg -s "$1" &>/dev/null "$pkg"; then
-            echo -e "configure: checking for $pkg $_pass"
+        if dpkg -s "$pkg" &>/dev/null "$pkg"; then
+            echo -e "configure: Checking for $pkg $_pass"
         else
-            echo -e "$pkg $_fail"
+            echo -e "configure: Checking for $pkg $_fail"
             _missing+=( "$pkg" )
         fi
     done
