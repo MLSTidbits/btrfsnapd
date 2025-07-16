@@ -270,8 +270,6 @@ After adding the repository to your system, run:
 EOF
 )"
 
-# shellcheck disable=SC2221
-# shellcheck disable=SC2222
 case "$1" in
     build                     ) build_deb "$@"                     ;;
     install                   ) manual_install                     ;;
