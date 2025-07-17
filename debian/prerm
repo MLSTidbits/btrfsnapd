@@ -3,14 +3,13 @@
 set -e
 
 case "$1" in
-	remove|purge									)
-		systemctl disable --now btrfsnapd.service >/dev/null || true
-		systemctl disable --now btrfsnapd.timer >/dev/null || true
-	;;
-	abort-upgrade|abort-deconfigure|abort-remove	) ;;
-	*												)
-		echo "Unsupported action: $1" ; exit 1
-	;;
-esac
+  remove)
+    if [ -z "${DPKG_ROOT:-}" ] && [ -d /run/systemd/system ]; then
+      deb-systemd-invoke stop 'btrfsnapd.service' 'btrfsnapd.timer' >/dev/null || true
+    fi
+    ;;
 
-exit 0
+  *)
+    # No action for other arguments
+    ;;
+esac
