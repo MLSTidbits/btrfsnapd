@@ -26,32 +26,52 @@
 
 #### Debian-based Systems
 
-To install **BTRFSNAPD**, follow these steps on the official [apt repository](https://repository.howtonebie.com/) or download the latest [release](https://github.com/MichaelSchaecher/btrfsnapd/releases) Debian package: Install with `dpkg` command:
+To install **BTRFSNAPD**, follow these steps on the official [apt repository](https://repository.howtonebie.com/)
 
 ```console
-sudo dpkg -i btrfsnapd_*.deb
+sudo apt install --yes btrfsnapd
 ```
 
 #### Non-Debian Systems
 
-Manual installation is also possible. You can clone the repository and run the script directly:
+Manual installation is also possible for non-Debian systems. You can clone the repository and run the `configure` script to set up the necessary files.
 
 ```console
 git clone https://github.com/MichaelSchaecher/btrfsnapd.git
 cd btrfsnapd
+sudo ./configure install
 ```
 
-Copy the `btrfsnapd` script and related files to your desired location, such as `/usr/bin`, `/etc`. Manually installation on non-Debian systems will be available in the future.
+## BTRFS Subvolumes
 
-### Configuration
+Once installed successfully, you can start using **BTRFSNAPD** by configuring the subvolumes you want to snapshot in the configuration file located at `/etc/btrfsnapd.conf`. By default, the directory for snapshots is `/.snapshots`. It needs to be created manually before the first snapshot is taken.
+
+```console
+sudo mkdir -p /.snapshots
+mount /dev/<your-btrfs-device> /mnt
+sudo btrfs subvolume create /mnt/@snapshots
+sudo umount /mnt
+```
+
+Now mount the BTRFS device again and ensure that the subvolume is mounted correctly, making sure that you use the same mount options in your `/etc/fstab` file:
+
+```console
+sudo mount -o subvol=@snapshots /dev/<your-btrfs-device> /.snapshots
+```
+
+> **Note**: If [Ubuntu](https://ubuntu.com/) what installed with the new installer, no subvolume will be created by default. You can create it manually with `btrfs subvolume create /.snapshots`. The downside to the way the new installer treats BTRFS is that it does not create a sepparate subvolume for the root filesystem and home directory. This means that snapshots will include all data, which may not be desired in some cases.
+>
+> It is recommended to create separate subvolumes for root and home directories to manage snapshots more effectively. This process needs to be done from a live environment or recovery mode to avoid issues with making changes to the root filesystem while booted into said environment.
+
+## Configuration
 
 The configuration file is located at `/etc/btrfsnapd.conf`. You can edit this file to specify the subvolumes you want to snapshot and the retention policy. Here is an example configuration:
 
 ```bash
-#DISTRO_NAME="ubuntu"
+#DISTRO_NAME="Ubuntu"
 ```
 
-Uncomment the line above and replace `"ubuntu"` with your distribution name to enable the configuration.
+Uncomment the line above and replace `"Ubuntu"` with your distribution name to enable the configuration.
 
 To change the default snapshot directory location, you can modify the `SNAPSHOT_DIR` variable in the configuration file:
 
@@ -61,46 +81,42 @@ SNAPSHOT_DIR="/path/to/your/snapshot/directory"
 
 ## Usage
 
-If installed via package manager, the service will start automatically. You can check the status of the service with:
+Weather you installed **BTRFSNAPD** via the package manager or manually, the daemon well be be started automatically and take a snapshot according to the defaults if the configuration values are not changed. You can check the status of the daemon using:
 
 ```console
-systemctl status btrfsnapd.timer
+sudo systemctl status btrfsnapd.timer
 ```
 
-To manually create a snapshot, you can run the following command:
+### Creating Snapshots
 
-```console
-btrfsnapd create
+To manually trigger a snapshot, you can use the following command: `sudo btrfsnapd create --source <root|home|logs> --yes`. This will create a snapshot of the specified subvolume. The `--yes` flag is used to skip confirmation prompts. if you want to set target directory the snapshot will be created in, you can use the `--target` with the path to the directory you want to create the snapshot in.
+
+For example: `sudo btrfsnapd create --source root --target /path/to/snapshot/directory --yes`.
+
+### Deleting Snapshots
+
+The default number of snapshots to keep is 7 total of all snapshots. You can change this by editing the `TOTAL_COUNT` variable in the configuration file. Once the number of snapshots exceeds the specified limit, the oldest snapshots will be deleted automatically. However, you can also manually delete snapshots using the `btrfsnapd delete` command. For example, to delete all snapshots of the root subvolume, you can use: `sudo btrfsnapd delete --oldest --yes`
+
+If you need or want to delete a specific snapshot, you can use the the following _flags `--list`_ to list all snapshots and be presented with a choose menu to select the snapshot you want to delete. Once you selected the snapshot, you be prompted to confirm the deletion. If you want to skip the confirmation prompt, you can use the `--yes` flag.
+
+### Listing Snapshots
+
+To list all snapshots, you can use the `btrfsnapd list` command. This will display a list of all snapshots along with their names, sources, and creation dates. The output will look something like this:
+
+```plaintext
+Name              Source           Date
+---------------------------------------------
+snapshot1        root             2023-10-01 12:00:00
+snapshot2        home             2023-10-02 14:30:00
+snapshot3        logs             2023-10-03 16:45:00
 ```
 
-Confirm that you want to create a snapshot by typing `[yY]` when prompted.
+### Restoring Snapshots
 
-To delete old snapshots based on the retention policy, you can run:
+If either `grub-btrfsd` or `grub-btrfs` are installed then `btrfsnapd` is capable of restoring from snapshots if booted into a live snapshot. To restore a snapshot, you can use the `btrfsnapd restore` command followed by the name of the snapshot you want to restore. For example: `sudo btrfsnapd restore --list --source <root|home|logs>`. Once you selected the snapshot you want to restore, you will be prompted to confirm the restoration. If you want to skip the confirmation prompt, you can use the `--yes` flag.
 
-```console
-btrfsnapd delete
-```
+The process with delete the source subvolume and replace it with the snapshot you selected. This means the source subvolume will restored to the state it was in when the snapshot was created. Be cautious when using this command, as it will overwrite the current state of the subvolume.
 
-Answer `y` to confirm the deletion of old snapshots. To delete a specific snapshot, you can use: `btrfsnapd delete --list` and choose the snapshot you want to delete.
+## Contributing
 
-```console
-btrfsnapd delete --list --yes
-```
-
-Will delete the chosen snapshot without further confirmation.
-
-### Systemd Integration
-
-To change the timer interval, you can edit the systemd timer with: `sudo systemctl edit btrfsnapd.timer`. This will open an editor where you can modify the timer settings. For example, to change the interval to every 30 minutes, you can add:
-
-```ini
-# Customize the timer interval for every 12 hours on 5 a.m. and 5 p.m.
-OnCalendar=*-*-* 05:00:00,17:00:00
-```
-
-This will create snapshots at 5 a.m. and 5 p.m. every day. To apply the changes, run:
-
-```console
-sudo systemctl daemon-reload
-sudo systemctl restart btrfsnapd.timer
-```
+If you would like to contribute to **BTRFSNAPD**, feel free to submit a pull request or open an issue on the [GitHub repository](https://github.com/MichaelSchaecher/btrfsnapd). Contributions are welcome, any feedback or suggestions are appreciated. Contribution_Guideline
