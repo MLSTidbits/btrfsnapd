@@ -1,4 +1,6 @@
-# Contributor Covenant Code of Conduct
+<div align="center">
+    <h1 style="font-size: 2em; font-weight: bold">Contributor Covenant Code of Conduct</h1>
+</div>
 
 ## Our Pledge
 
