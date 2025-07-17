@@ -77,18 +77,18 @@ function take_snapshot () {
 
     _snapshotOptions=""
 
-    _targetDir="/$_snapshotsDir"
+    _targetDir="$_snapshotsDir"
     _sourceDir="/"
 
     shift
 
      [[ "$1" == "-h" || "$1" == "--help" ]] && { echo "$_createHelpInfo" ; exit 0 ; }
 
-    if ! test -d "/$_snapshotsDir" ; then
-        event_log "warning" "Snapshot subvolume /$_snapshotsDir does not exist, creating it"
+    if ! test -d "$_snapshotsDir" ; then
+        event_log "warning" "Snapshot subvolume $_snapshotsDir does not exist, creating it"
         # Check if there is a subvolume for snapshots or snapshot, if not create it
         if ! btrfs subvolume list / | grep -q "@snapshots" ; then
-            btrfs subvolume create "/$_snapshotsDir" || {
+            btrfs subvolume create "$_snapshotsDir" || {
             event_log "error" "Failed to create snapshot subvolume $_snapshotsDir" ; exit 1 ; }
         fi
         event_log "info" "Created snapshot subvolume $_snapshotsDir"
@@ -110,7 +110,7 @@ function take_snapshot () {
         -t|--target                 )
             # Check if a flag is next instead of a directory
             if [[ "${2}" == -* ]] ; then
-                _targetDir="/$_snapshotsDir"
+                _targetDir="$_snapshotsDir"
             else
                 _targetDir="/${2}"
             fi
@@ -184,7 +184,7 @@ function delete_snapshot () {
     local _snapshotsList _snapshotsName _oldSnapshots _snapshotList
 
     _snapshotsList=()
-    _targetDir="/$_snapshotsDir"
+    _targetDir="$_snapshotsDir"
     _oldest="no"
     _confirm="no"
 
@@ -374,18 +374,21 @@ function list_snapshots () {
 
     local _listSnapshotsDir
 
-    _listSnapshotsDir="/$_snapshotsDir"
+    _listSnapshotsDir="$_snapshotsDir"
 
         # List all snapshots in the snapshot directory
     if test -d "$_listSnapshotsDir" ; then
         echo "$_versionInfo"
         echo ""
-        echo "Available snapshots in $_snapshotsDir subvolume:"
-        echo "--------------------------------------------------"
+        echo "Name              Source           Date"
+        echo "---------------------------------------------------"
         echo ""
 
         find "$_listSnapshotsDir" -mindepth 1 -maxdepth 1 -type d | sort | while read -r snap ; do
-            basename "${snap}"
+            _name="$(basename "$snap" | awk -F'_' '{print $1}')"
+            _source="$(basename "$snap" | awk -F'_' '{print $2}')"
+            _date="$(basename "$snap" | awk -F'_' '{print $3}' | sed 's/+/ /g')"
+            echo "$_name           $_source             $_date"
         done
     else
         echo "No snapshots found in $_snapshotsDir"
@@ -415,7 +418,7 @@ fi
 
 _snapshotType="${SNAPSHOT_TYPE:-root}"
 
-_snapshotsDir="${SNAPSHOT_DIR:-.snapshots}"
+_snapshotsDir="${SNAPSHOT_DIR:-/.snapshots}"
 _setDate="${SET_DATE:-true}"
 _readOnly="${READ_ONLY:-false}"
 
