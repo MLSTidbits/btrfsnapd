@@ -10,7 +10,7 @@ function reset_env () {
         debian/*.substvars \
         debian/*.ex \
         debian/*.debhelper \
-        doc/man/"$(basename "$(pwd)")".{1,5,8} || true
+        man/"$(basename "$(pwd)")".{1,conf.5,8} || true
 
         # shellcheck disable=SC2181
         if [ "$?" -eq 0 ] ; then
@@ -32,7 +32,7 @@ function build_deb () {
     _arches=()
 
     # Manually required system packages
-    _required=( debhelper dh-make git genchangelog pandoc coreutils )
+    _required=( debhelper dh-make git dh-gitchangelog pandoc coreutils )
     _missing=()
 
     shift
@@ -104,8 +104,6 @@ function build_deb () {
         exit 1
     fi
 
-   dh_genchangelog
-
     if [ "$_type" = "source" ] || [ "$_type" = "full" ] ; then
         # Compress the source package into a tarball
         _version=$(cat doc/version)
@@ -113,6 +111,13 @@ function build_deb () {
         cd "$_app_name"
     fi
 
+    dh_gitchangelog
+
+    for m in man/*.md; do
+        base=$(basename "$m" .md)
+        out="man/${base}"
+        pandoc "$m" -s -t man -o "$out"
+    done
 
     for arch in "${_target_arch[@]}"; do
         # shellcheck disable=SC2086
