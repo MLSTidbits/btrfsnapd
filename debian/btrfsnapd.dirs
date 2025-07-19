@@ -1,8 +1,5 @@
 etc/apt/apt.conf.d
 usr/bin
-usr/share/bash-completion/completions
 usr/lib/systemd/system
-usr/share/man/man8
-usr/share/man/man5
 usr/share/doc/btrfsnapd
 
