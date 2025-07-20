@@ -1,0 +1,6 @@
+# Install the executable script
+src/btrfsnapd usr/bin/
+
+# Install the configuration files
+src/conf/btrfsnapd.conf etc/
+src/conf/50_btrfsnapd etc/apt/apt.conf.d/
