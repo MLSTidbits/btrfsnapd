@@ -113,11 +113,13 @@ function build_deb () {
 
     dh_gitchangelog
 
-    for m in man/*.md; do
-        base=$(basename "$m" .md)
-        out="man/${base}"
-        pandoc "$m" -s -t man -o "$out"
-    done
+    if [ -d man ] ; then
+        for m in man/*.md; do
+            base=$(basename "$m" .md)
+            out="man/${base}"
+            pandoc "$m" -s -t man -o "$out"
+        done
+    fi
 
     for arch in "${_target_arch[@]}"; do
         # shellcheck disable=SC2086
