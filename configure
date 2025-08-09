@@ -81,11 +81,7 @@ function build_deb () {
     fi
 
     # Check if the HowToNebie APT repository is available
-    if ! grep -qr "howtonebie" /etc/apt/ 2>/dev/null; then
-        echo -e "$_missingRepo"
-    else
-        echo -e "configure: Detected HowToNebie APT repository."
-    fi
+    ! grep -qr "MLSTidbits" /etc/apt/ 2>/dev/null && echo -e "$_missingRepo"
 
     for pkg in "${_required[@]}"; do
         if dpkg -s "$pkg" &>/dev/null "$pkg"; then
@@ -271,7 +267,7 @@ _missingRepo="$(cat <<-EOF
 HowToNebie APT repository is not available on your system.
 
 Please add the HowToNebie APT repository to your system.
-You can find instructions here: https://repository.howtonebie.com
+You can find instructions here: https://archive.mlstidbits.com
 After adding the repository to your system, run:
 
     sudo apt update\033[0m - Then run this script again."
