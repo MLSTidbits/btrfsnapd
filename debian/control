@@ -6,9 +6,9 @@ Rules-Requires-Root: no
 Build-Depends:
  debhelper-compat (= 13), dh-gitchangelog, dh-make
 Standards-Version: 4.6.2
-Homepage: https://github.com/MichaelSchaecher/btrfsnapd
-Vcs-Browser: https://github.com/MichaelSchaecher/btrfsnapd
-Vcs-Git: https://github.com/MichaelSchaecher/btrfsnapd.git
+Homepage: https://mlstidbits.com
+Vcs-Browser: https://github.com/MLSTidbits/btrfsnapd
+Vcs-Git: https://github.com/MLSTidbits/btrfsnapd.git
 
 Package: btrfsnapd
 Architecture: any
