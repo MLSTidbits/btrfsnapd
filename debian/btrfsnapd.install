@@ -1,0 +1,3 @@
+src/btrfsnapd usr/bin/
+src/conf/btrfsnapd.conf etc/
+src/conf/50btrfsnapd etc/apt/apt.conf.d/
