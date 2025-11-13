@@ -54,14 +54,12 @@ function clean-up () {
     event-log "info" "Cleaning up temporary directories"
 }
 
-function check_root () {
-    (( $(id -u) == 0 )) || { echo "This script must be run as root" ; exit 1 ; }
-}
+function check-root () { (( $(id -u) == 0 )) || event-log "error" "This script must be run as root" ; }
 
 function take_snapshot () {
 
     # Check if the script is run with root privileges
-    check_root
+    check-root
 
     local _snapshotOptions _confirm _sourceDir _targetDir _snapshotOut
 
@@ -183,7 +181,7 @@ function delete_snapshot () {
     [[ "$1" == "-h" || "$1" == "--help" ]] && { echo "${_deleteHelpInfo}" ; exit 0 ; }
 
     # Check if the script is run with root privileges
-    check_root
+    check-root
 
     # shellcheck disable=SC2222
     # shellcheck disable=SC2221
@@ -272,7 +270,7 @@ function restore_snapshot () {
     [[ "$1" == "-h" || "$1" == "--help" ]] && { echo "${_restoreHelpInfo}" ; exit 0 ; }
 
     # Check if the script is run with root privileges
-    check_root
+    check-root
 
     mountedTmpDirs="$(mktemp -d)"
 
@@ -360,7 +358,7 @@ function restore_snapshot () {
 
 function list_snapshots () {
 
-    check_root
+    check-root
 
     local _listSnapshotsDir
 
