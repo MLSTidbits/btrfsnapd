@@ -1,5 +1,0 @@
-etc/apt/apt.conf.d
-usr/bin
-usr/lib/systemd/system
-usr/share/doc/btrfsnapd
-
