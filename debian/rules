@@ -20,28 +20,19 @@
 #	dh_auto_configure -- \
 #	-DCMAKE_LIBRARY_PATH=$(DEB_HOST_MULTIARCH)
 
-%:
-	dh $@
-
-# override_dh_auto_install:
-# 	@echo "Skipping upstream install step"
-
-build: build-stamp
-	dh_auto_build
-
-build-stamp:
-	touch $@
+build:
+	@$(MAKE) -j$(shell nproc) all
 
 clean:
-	dh_auto_clean
-	rm -f build-stamp
+	@$(MAKE) -j$(shell nproc) clean
+	@rm -rf debian/*.debhelper \
+		debian/*.substvars \
+		debian/*.debhelper \
+		debian/.debhelper \
+		debian/files
 
 install:
-	dh_testdir
-	dh_testroot
 	dh_prep
-
-binary-indep:
 	dh_installdocs
 	dh_install
 	dh_installman
@@ -59,8 +50,6 @@ binary-indep:
 	dh_md5sums
 	dh_builddeb
 
-binary-arch: build install
+binary: build install
 
-binary: binary-arch binary-indep clean
-
-.PHONY: build clean install binary-indep binary-arch binary
+.PHONY: build clean install
