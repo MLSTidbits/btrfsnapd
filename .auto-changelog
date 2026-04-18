@@ -1,0 +1,9 @@
+{
+  "output": "CHANGELOG.md",
+  "template": "compact",
+  "commitLimit": false,
+  "commitPattern": "^(feat|fix|revert|docs|bump|BREAKING CHANGE)",
+  "hideCredit": false,
+  "startingVersion": "0.1",
+  "hideEmptyReleases": true
+}

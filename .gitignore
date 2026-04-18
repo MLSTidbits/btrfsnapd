@@ -1,8 +1,5 @@
 .vscode/
 
-build/
-dist/
-
 changelog
 
 *.gz
@@ -18,10 +15,5 @@ debian/*.debhelper
 debian/*.substvars
 debian/btrfsnapd/
 debian/btrfsnapd-docs/
-debian/btrfsnapd-man/
-
-doc/version
-man/btrfsnapd.8
-man/btrfsnapd.conf.5
 
 _build/
