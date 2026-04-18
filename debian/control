@@ -29,12 +29,8 @@ Package: btrfsnapd-docs
 Architecture: all
 Depends: btrfsnapd
 Description: Documentation for Btrfsnapd
- This package contains the documentation for Btrfsnapd, including README.md and
- and other relevant documentation files.
-
-Package: btrfsnapd-man
-Architecture: all
-Depends: btrfsnapd
-Description: Manpages for Btrfsnapd
- This package contains the manpages for Btrfsnapd, providing detailed information
- on how to use the various features of the Btrfsnapd daemon.
+ This package contains the documentation for Btrfsnapd, including user guides,
+ manuals, and other relevant information to help users understand and utilize the
+ features of Btrfsnapd effectively. It is intended to provide comprehensive information
+ about the installation, configuration, and usage of Btrfsnapd for users of all levels
+ of expertise.
