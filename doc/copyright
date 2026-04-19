@@ -1,20 +1,12 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Source: https://github.com/MichaelSchaecher/grub-btrfsd
 Upstream-Name: grub-btrfsd
-Upstream-Contact: Michael Schaecher <michaelleeschaecher@gamil.com>
+Upstream-Contact: Michael Schaecher <michaelschaecher@mlstidbits.com>
 
 Files:
- debian/*
- etc/*
- usr/bin/grub-btrfsd
- usr/lib/systemd/system/grub-btrfsd.service
- usr/share/doc/grub-btrfsd/*
- usr/share/doc/man/man1/*
-
+ *
 Copyright:
- 2025 Michael Schaecher <michaelleeschaecher@gmail.com>
-License: GPL-3.0+
-
+ 2025 Michael Schaecher <michaelschaecher@mlstidbits.com>
 License: GPL-3.0+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
