@@ -53,19 +53,17 @@ install:
 
 # Install the /etc configuration file if it doesn't exist
 	@if [ ! -f /etc/default/grub_btrfsd ] && [ ! -f /etc/grub.d/41_grub_btrfsd ]; then \
-		echo "Installing default configuration file"; \
-		install -Dm644 $(SOURCE_DIR)/conf/grub_btrfsd /etc/default/grub_btrfsd; \
-		install -Dm644 $(SOURCE_DIR)/conf/41_grub_btrfsd /etc/grub.d/41_grub_btrfsd; \
+		install -Dvm644 $(SOURCE_DIR)/conf/grub_btrfsd /etc/default/grub_btrfsd; \
+		install -Dvm644 $(SOURCE_DIR)/conf/41_grub_btrfsd /etc/grub.d/41_grub_btrfsd; \
 	fi
 
-	@install -Dm644 $(BUILD_DIR)/$(MAN_DIR)/$(APPLICATION).1 /usr/share/man/man1/$(APPLICATION).8
-	@gzip -9 /usr/share/man/man1/$(APPLICATION).8
+	@install -Dvm644 $(BUILD_DIR)/$(MAN_DIR)/$(APPLICATION).1 /usr/share/man/man8/$(APPLICATION).8
+	@gzip -9 /usr/share/man/man8/$(APPLICATION).8
 
-	@install -Dm644 $(BUILD_DIR)/$(MAN_DIR)/$(APPLICATION).conf.5 /usr/share/man/man5/$(APPLICATION).conf.5
+	@install -Dvm644 $(BUILD_DIR)/$(MAN_DIR)/$(APPLICATION).conf.5 /usr/share/man/man5/$(APPLICATION).conf.5
 	@gzip -9 /usr/share/man/man5/$(APPLICATION).conf.5
 
-	@install -Dm644 $(DOC_DIR)/version $(DOC_DIR)/copyright README.md CONTRIBUTING.md CODE_OF_CONDUCT.md \
-		/usr/share/doc/$(APPLICATION)/
+	@install -Dvm644 $(BUILD_DIR)/doc/* /usr/share/doc/$(APPLICATION)/
 
-	@install -Dm644 $(BUILD_DIR)/conf/$(APPLICATION).conf /etc/
-	@install -Dm644 $(BUILD_DIR)/conf/50$(APPLICATION) /etc/apt/preferences.d/
+	@install -Dvm644 $(BUILD_DIR)/conf/$(APPLICATION).conf /etc/
+	@install -Dvm644 $(BUILD_DIR)/conf/50$(APPLICATION) /etc/apt/preferences.d/
