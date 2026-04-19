@@ -15,7 +15,7 @@ Architecture: amd64
 Multi-Arch: foreign
 Depends:
  btrfs-progs, systemd, coreutils (>= 8), grub-common, grub2-common, grub-btrfsd
-Conflicts: btrfsnapd (>= 2.2.2)
+Conflicts: btrfsnapd (>= 2.2.2), btrfsnapd-man
 Description:  Btrfs snapshot daemon
  Btrfsnapd is a daemon that manages Btrfs snapshots and integrates with
  GRUB to allow booting into snapshots. It provides a simple command-line
