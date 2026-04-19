@@ -12,6 +12,12 @@ SOURCE_FILES = $(SOURCE_DIR)/$(APPLICATION) \
 	$(SOURCE_DIR)/conf/$(APPLICATION).conf \
 	$(SOURCE_DIR)/completion/$(APPLICATION)
 
+DOC_FILES = $(DOC_DIR)/version \
+	$(DOC_DIR)/copyright \
+	README.md \
+	CONTRIBUTING.md \
+	CODE_OF_CONDUCT.md
+
 all: _build/man _build/docs _build/src
 
 _build/man:
@@ -30,7 +36,7 @@ _build/man:
 _build/docs:
 	@mkdir -p $(BUILD_DIR)/doc \
 
-	@for f in $(DOC_DIR)/version $(DOC_DIR)/copyright README.md CONTRIBUTING.md CODE_OF_CONDUCT.md ; do \
+	@for f in $(DOC_FILES) ; do \
 		output="$(BUILD_DIR)/doc/$$(basename "$$f")"; \
 		echo "\e[1;34mCP:\e[0m $$output"; \
 		install -Dm644 "$$f" "$$output"; \
@@ -49,6 +55,9 @@ clean:
 	@rm -rvf $(BUILD_DIR)
 
 install:
+# To install the application the user must have root privileges, so we use sudo to ensure the correct permissions
+	@[ "$$(id -u)" -ne 0 ] && echo "Please run 'sudo make install' to install $(APPLICATION)." && exit 1
+
 	@install -Dm755 $(SOURCE_DIR)/$(APPLICATION) /usr/bin/$(APPLICATION)
 
 # Install the /etc configuration file if it doesn't exist
@@ -57,11 +66,16 @@ install:
 		install -Dvm644 $(SOURCE_DIR)/conf/41_grub_btrfsd /etc/grub.d/41_grub_btrfsd; \
 	fi
 
-	@install -Dvm644 $(BUILD_DIR)/$(MAN_DIR)/$(APPLICATION).1 /usr/share/man/man8/$(APPLICATION).8
-	@gzip -9 /usr/share/man/man8/$(APPLICATION).8
-
-	@install -Dvm644 $(BUILD_DIR)/$(MAN_DIR)/$(APPLICATION).conf.5 /usr/share/man/man5/$(APPLICATION).conf.5
-	@gzip -9 /usr/share/man/man5/$(APPLICATION).conf.5
+	for man in $(BUILD_DIR)/$(MAN_DIR)/$(APPLICATION).1 $(BUILD_DIR)/$(MAN_DIR)/$(APPLICATION).conf.5; do \
+		if [ "$$man" == "$(BUILD_DIR)/$(MAN_DIR)/$(APPLICATION).1" ]; then \
+			target="/usr/share/man/man8/$(APPLICATION).8"; \
+		elif [ "$$man" == "$(BUILD_DIR)/$(MAN_DIR)/$(APPLICATION).conf.5" ]; then \
+			target="/usr/share/man/man5/$(APPLICATION).conf.5"; \
+		fi
+		echo "\e[1;34mINSTALL:\e[0m $$target"; \
+		install -Dvm644 "$$man" "$$target"; \
+		gzip -9 "$$target"; \
+	done
 
 	@install -Dvm644 $(BUILD_DIR)/doc/* /usr/share/doc/$(APPLICATION)/
 
