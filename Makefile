@@ -1,6 +1,6 @@
-.PHONY: all clean install _pandoc _out
+.PHONY: all clean install _build/*
 
-APPLICATION = $(basename $(shell pwd))
+APPLICATION = $(shell basename $(shell pwd))
 VERSION = $(shell cat doc/version)
 
 BUILD_DIR = _build
@@ -8,10 +8,13 @@ SOURCE_DIR = src
 DOC_DIR = doc
 MAN_DIR = man
 
-all: _pandoc _out
+SOURCE_FILES = $(SOURCE_DIR)/$(APPLICATION) \
+	$(SOURCE_DIR)/conf/$(APPLICATION).conf \
+	$(SOURCE_DIR)/completion/$(APPLICATION)
 
-_pandoc:
-	@echo "Building manual page..."
+all: _build/man _build/docs _build/src
+
+_build/man:
 	@mkdir -p $(BUILD_DIR)/$(MAN_DIR)
 	@if ! command -v pandoc ; then \
 		echo 'pandoc could not be found. Please install pandoc to build the manual page.'; \
@@ -20,23 +23,30 @@ _pandoc:
 
 	@for manpage in $(MAN_DIR)/*.md; do \
 		output=$(BUILD_DIR)/$(MAN_DIR)/$$(basename "$${manpage%.md}"); \
-		echo "Converting $$manpage to $$output..."; \
+		echo "\e[1;34mCV:\e[0m $$output"; \
 		pandoc -s -t man -o "$$output" "$$manpage"; \
 	done
 
-#	pandoc -s -t man -o $(BUILD_DIR)/$(MAN_DIR)/$(APPLICATION).1 $(MAN_DIR)/$(APPLICATION).1.md
+_build/docs:
+	@mkdir -p $(BUILD_DIR)/doc \
 
+	@for f in $(DOC_DIR)/version $(DOC_DIR)/copyright README.md CONTRIBUTING.md CODE_OF_CONDUCT.md ; do \
+		output="$(BUILD_DIR)/doc/$$(basename "$$f")"; \
+		echo "\e[1;34mCP:\e[0m $$output"; \
+		install -Dm644 "$$f" "$$output"; \
+	done
 
-_out:
-	mkdir -p $(BUILD_DIR)/doc \
+_build/src:
+	@mkdir -p $(BUILD_DIR)/src
 
-	@cp -rv $(SOURCE_DIR)/* $(BUILD_DIR)/
-
-	@cp -v $(DOC_DIR)/version $(DOC_DIR)/copyright README.md CONTRIBUTING.md CODE_OF_CONDUCT.md \
-		$(BUILD_DIR)/$(DOC_DIR)/
+	@for srcfile in $(SOURCE_FILES); do \
+		output=$(BUILD_DIR)/$(basename "$$srcfile"); \
+		echo "\e[1;34mCP:\e[0m $$output"; \
+		install -Dm755 "$$srcfile" "$$output"; \
+	done
 
 clean:
-	rm -rvf $(BUILD_DIR)
+	@rm -rvf $(BUILD_DIR)
 
 install:
 	@install -Dm755 $(SOURCE_DIR)/$(APPLICATION) /usr/bin/$(APPLICATION)
